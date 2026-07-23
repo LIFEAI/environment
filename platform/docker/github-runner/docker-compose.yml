@@ -1,0 +1,68 @@
+# GitHub Actions Self-Hosted Runner — Coolify Deployment
+#
+# Runs CI builds for LIFEAI/regen-root on the Coolify server (64.237.54.189).
+# $0 incremental cost — the server is already provisioned and paid for.
+#
+# RUNNER_TOKEN lifecycle:
+#   1. Get token from GitHub (ephemeral, expires in ~1 hour)
+#   2. Set as env var in Coolify, deploy
+#   3. Runner registers, stores persistent credentials in `runner-credentials` volume
+#   4. REMOVE RUNNER_TOKEN from Coolify env vars (no longer needed)
+#   5. On restart, runner reconnects using stored credentials — no token required
+#
+# To force re-registration (e.g., after removing runner from GitHub):
+#   Set FORCE_REREGISTER=true and provide a fresh RUNNER_TOKEN
+
+services:
+  github-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # --- Required for FIRST registration only ---
+      - RUNNER_TOKEN=${RUNNER_TOKEN:-}
+
+      # --- Runner identity ---
+      - RUNNER_NAME=${RUNNER_NAME:-coolify-runner-01}
+      - RUNNER_REPOSITORY_URL=https://github.com/LIFEAI/regen-root
+      - RUNNER_LABELS=self-hosted,linux,coolify
+      - RUNNER_WORKDIR=/home/runner/work
+
+      # --- Re-registration (set to true + new token to re-register) ---
+      - FORCE_REREGISTER=${FORCE_REREGISTER:-false}
+
+      # --- Node/pnpm config ---
+      - PNPM_HOME=/home/runner/.local/share/pnpm
+      - NODE_OPTIONS=--max-old-space-size=3584
+
+    volumes:
+      # Persistent credentials — survives container rebuilds
+      # This is where the runner stores its auth after registration
+      - runner-credentials:/home/runner/actions-runner
+
+      # pnpm store cache — speeds up repeated installs significantly
+      - pnpm-store:/home/runner/.local/share/pnpm/store
+
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+    # Health check — runner process should be alive
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'Runner.Listener' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  runner-credentials:
+    name: github-runner-credentials-v2
+  pnpm-store:
+    name: github-runner-pnpm-store

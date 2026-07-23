@@ -1,0 +1,37 @@
+# Flowable — Open Source BPMN/CMMN/DMN Engine
+# License: Apache 2.0 (fully open source)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: flowable
+      POSTGRES_USER: flowable
+      POSTGRES_PASSWORD: flowable
+    volumes:
+      - flowable-db-v6:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowable"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  flowable:
+    image: flowable/flowable-ui:6.8.0
+    expose:
+      - "8080"
+    environment:
+      - SPRING_DATASOURCE_DRIVER-CLASS-NAME=org.postgresql.Driver
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/flowable
+      - SPRING_DATASOURCE_USERNAME=flowable
+      - SPRING_DATASOURCE_PASSWORD=flowable
+      - FLOWABLE_COMMON_APP_IDM_ADMIN_USER=admin
+      - FLOWABLE_COMMON_APP_IDM_ADMIN_PASSWORD=test
+      - JAVA_OPTS=-Xms256m -Xmx512m
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  flowable-db-v6:

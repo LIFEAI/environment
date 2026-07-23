@@ -1,0 +1,25 @@
+[
+  { "key": "ctrl+alt+1", "command": "workbench.action.terminal.newWithProfile", "args": { "profileName": "SV" } },
+  { "key": "ctrl+alt+2", "command": "workbench.action.terminal.newWithProfile", "args": { "profileName": "Portal" } },
+  { "key": "ctrl+alt+3", "command": "workbench.action.terminal.newWithProfile", "args": { "profileName": "Data" } },
+  { "key": "ctrl+alt+4", "command": "workbench.action.terminal.newWithProfile", "args": { "profileName": "CS2" } },
+  { "key": "ctrl+alt+5", "command": "workbench.action.terminal.newWithProfile", "args": { "profileName": "Mktg" } },
+  { "key": "ctrl+alt+6", "command": "workbench.action.terminal.newWithProfile", "args": { "profileName": "Infra" } },
+  { "key": "ctrl+alt+7", "command": "workbench.action.terminal.newWithProfile", "args": { "profileName": "Specialist" } },
+
+  { "key": "ctrl+alt+a", "command": "claude.openPanel" },
+  { "key": "ctrl+alt+s", "command": "workbench.action.terminal.sendSequence", "args": { "text": "C:\\Dev\\regen-root\\scripts\\cell-status.cmd\r" } },
+
+  { "key": "ctrl+shift+t", "command": "workbench.action.tasks.runTask", "args": "turbo: dev (all apps)" },
+  { "key": "ctrl+shift+b", "command": "workbench.action.tasks.build" },
+  { "key": "ctrl+shift+u", "command": "workbench.action.tasks.runTask", "args": "supabase: generate types" },
+
+  { "key": "ctrl+alt+left",  "command": "workbench.action.terminal.focusPreviousPane", "when": "terminalFocus" },
+  { "key": "ctrl+alt+right", "command": "workbench.action.terminal.focusNextPane", "when": "terminalFocus" },
+  { "key": "ctrl+shift+z",   "command": "workbench.action.toggleMaximizedPanel" },
+
+  { "key": "alt+shift+f", "command": "editor.action.formatDocument" },
+  { "key": "ctrl+shift+e", "command": "workbench.view.explorer" },
+  { "key": "ctrl+shift+g g", "command": "workbench.view.scm" },
+  { "key": "ctrl+alt+g", "command": "git-graph.view" }
+]

@@ -1,0 +1,28 @@
+Windows Registry Editor Version 5.00
+
+; Regen Media — Remove "Upload to Regen Media" context menu entries
+; Uses HKEY_CURRENT_USER — no admin required
+
+; ---- .jpg ----
+[-HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.jpg\shell\Upload to Regen Media]
+
+; ---- .jpeg ----
+[-HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.jpeg\shell\Upload to Regen Media]
+
+; ---- .png ----
+[-HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\Upload to Regen Media]
+
+; ---- .webp ----
+[-HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.webp\shell\Upload to Regen Media]
+
+; ---- .gif ----
+[-HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.gif\shell\Upload to Regen Media]
+
+; ---- .tiff ----
+[-HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.tiff\shell\Upload to Regen Media]
+
+; ---- .tif ----
+[-HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.tif\shell\Upload to Regen Media]
+
+; ---- .bmp ----
+[-HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.bmp\shell\Upload to Regen Media]

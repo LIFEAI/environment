@@ -1,0 +1,316 @@
+{
+  "$help": "https://aka.ms/terminal-documentation",
+  "$schema": "https://aka.ms/terminal-profiles-schema",
+
+  "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+  "copyOnSelect": true,
+  "copyFormatting": "all",
+  "firstWindowPreference": "persistedWindowLayout",
+  "initialRows": 40,
+  "showTabsFullscreen": true,
+  "theme": "dark",
+  "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?│",
+
+  "newTabMenu": [{ "type": "remainingProfiles" }],
+
+  "actions": [
+    { "command": "find",                                                    "id": "User.find" },
+    { "command": { "action": "splitPane", "split": "auto", "splitMode": "duplicate" }, "id": "User.splitPane.A6751878" },
+    { "command": { "action": "copy", "singleLine": false },                 "id": "User.copy.644BA8F2" },
+    { "command": { "action": "sendInput", "input": "\n" },                  "id": "User.sendInput.shiftenter" }
+  ],
+
+  "keybindings": [
+    { "id": "Terminal.DuplicatePaneRight",   "keys": "ctrl+alt+v" },
+    { "id": "Terminal.MoveFocusLeft",        "keys": "ctrl+alt+left" },
+    { "id": "Terminal.MoveFocusRight",       "keys": "ctrl+alt+right" },
+    { "id": "Terminal.MoveFocusUp",          "keys": "ctrl+alt+up" },
+    { "id": "Terminal.MoveFocusDown",        "keys": "ctrl+alt+down" },
+    { "id": "Terminal.DuplicatePaneDown",    "keys": "ctrl+shift+h" },
+    { "id": "Terminal.TogglePaneZoom",       "keys": "ctrl+shift+z" },
+    { "id": "Terminal.PasteFromClipboard",   "keys": "ctrl+v" },
+    { "id": "Terminal.ClosePane",            "keys": "ctrl+shift+w" },
+    { "id": "Terminal.ResizePaneLeft",       "keys": "ctrl+alt+shift+left" },
+    { "id": "Terminal.ResizePaneRight",      "keys": "ctrl+alt+shift+right" },
+    { "id": "User.find",                     "keys": "ctrl+shift+f" },
+    { "id": "User.copy.644BA8F2",            "keys": "ctrl+c" },
+    { "id": "User.splitPane.A6751878",       "keys": "alt+shift+d" },
+    { "id": "User.sendInput.shiftenter",     "keys": "shift+enter" },
+    { "id": null,                            "keys": "ctrl+enter" },
+    { "id": null,                            "keys": "enter" },
+    { "id": null,                            "keys": "win+h" }
+  ],
+
+  "profiles": {
+    "defaults": {
+      "antialiasingMode": "cleartype",
+      "bellStyle": "none",
+      "colorScheme": "Dimidium",
+      "cursorShape": "bar",
+      "font": {
+        "cellHeight": "1.2",
+        "cellWidth": "0.6",
+        "face": "Consolas",
+        "size": 12,
+        "weight": "normal"
+      },
+      "historySize": 50000,
+      "padding": "12",
+      "scrollbarState": "hidden"
+    },
+
+    "list": [
+      {
+        "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+        "name": "Command Prompt",
+        "commandline": "%SystemRoot%\\System32\\cmd.exe",
+        "hidden": false,
+        "useAcrylic": true,
+        "font": { "cellHeight": "1.2", "cellWidth": "0.6", "face": "Consolas", "size": 12, "weight": "normal" }
+      },
+      {
+        "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+        "name": "PowerShell",
+        "source": "Windows.Terminal.PowershellCore",
+        "hidden": false
+      },
+      {
+        "guid": "{e7c1128b-e51f-4eba-bcdb-85f550c31b97}",
+        "name": "SV",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -Command \"& { Set-Location -LiteralPath $env:REGEN_ROOT; & (Join-Path $env:REGEN_ROOT 'scripts\\cell-init.ps1') sv }\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "Dimidium",
+        "tabColor": "#1A6B3C",
+        "icon": "🟢",
+        "environment": { "CELL_ROLE": "sv" }
+      },
+      {
+        "guid": "{190a2f39-f6ad-4638-8fef-e4c7aa58c349}",
+        "name": "Claude",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -Command \"& { Set-Location -LiteralPath $env:REGEN_ROOT; & (Join-Path $env:REGEN_ROOT 'scripts\\cell-init.ps1') sv }\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "Dimidium",
+        "tabColor": "#B91C1C",
+        "icon": "🔴",
+        "environment": { "CELL_ROLE": "sv" }
+      },
+      {
+        "guid": "{030efb20-4dba-4ec6-a8fd-dcedb53f97be}",
+        "name": "claude-wt",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -File \"%REGEN_ROOT%\\scripts\\claude-iso.ps1\"",
+        "startingDirectory": "C:\\Dev\\regen-root",
+        "colorScheme": "LIFEAI Claude",
+        "tabColor": "#0F766E",
+        "icon": "🌳",
+        "environment": { "CELL_ROLE": "claude-wt" }
+      },
+      {
+        "guid": "{daa88b12-b598-420a-ba4b-3d50702e70f6}",
+        "name": "Portal",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -Command \"& { Set-Location -LiteralPath $env:REGEN_ROOT; & (Join-Path $env:REGEN_ROOT 'scripts\\cell-init.ps1') cell-portal }\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "LIFEAI Slate",
+        "tabColor": "#1E3A5F",
+        "icon": "🟦",
+        "environment": { "CELL_ROLE": "cell-portal" }
+      },
+      {
+        "guid": "{3cb5ec11-cd9c-4b34-9799-5d5a4d2dc352}",
+        "name": "Data",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -Command \"& { Set-Location -LiteralPath $env:REGEN_ROOT; & (Join-Path $env:REGEN_ROOT 'scripts\\cell-init.ps1') cell-data }\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "LIFEAI Slate",
+        "tabColor": "#0F766E",
+        "icon": "🟢",
+        "environment": { "CELL_ROLE": "cell-data" }
+      },
+      {
+        "guid": "{547d34f7-ddfa-4637-bcf4-f76b5d82a444}",
+        "name": "CS2",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -Command \"& { Set-Location -LiteralPath $env:REGEN_ROOT; & (Join-Path $env:REGEN_ROOT 'scripts\\cell-init.ps1') cell-cs2 }\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "LIFEAI Dark",
+        "tabColor": "#7C3AED",
+        "icon": "🟣",
+        "environment": { "CELL_ROLE": "cell-cs2" }
+      },
+      {
+        "guid": "{7cec7aea-861e-4cc5-a044-3da66067d264}",
+        "name": "Mktg",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -Command \"& { Set-Location -LiteralPath $env:REGEN_ROOT; & (Join-Path $env:REGEN_ROOT 'scripts\\cell-init.ps1') cell-mktg }\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "LIFEAI Slate",
+        "tabColor": "#B45309",
+        "icon": "🟡",
+        "environment": { "CELL_ROLE": "cell-mktg" }
+      },
+      {
+        "guid": "{e2cdf86d-bc77-4ca5-b32b-571561f7848f}",
+        "name": "Infra",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -Command \"& { Set-Location -LiteralPath $env:REGEN_ROOT; & (Join-Path $env:REGEN_ROOT 'scripts\\cell-init.ps1') cell-infra }\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "LIFEAI Dark",
+        "tabColor": "#4B5563",
+        "icon": "⚙️",
+        "environment": { "CELL_ROLE": "cell-infra" }
+      },
+      {
+        "guid": "{5df50624-b94a-404a-9fe9-1b772a338e3a}",
+        "name": "Spec",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -Command \"& { Set-Location -LiteralPath $env:REGEN_ROOT; & (Join-Path $env:REGEN_ROOT 'scripts\\cell-init.ps1') specialist }\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "LIFEAI Claude",
+        "tabColor": "#92400E",
+        "icon": "🔍",
+        "environment": { "CELL_ROLE": "specialist" }
+      },
+      {
+        "guid": "{2d0248ef-7bb7-4b9e-b381-c4aa1f570f49}",
+        "name": "Codex",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -File \"%REGEN_ROOT%\\scripts\\codex-worktree-launch.ps1\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "Dimidium",
+        "tabColor": "#0F766E",
+        "icon": "🧬",
+        "environment": { "CELL_ROLE": "codex" }
+      },
+      {
+        "guid": "{5a0dddbd-e716-4ce8-8d55-a48926750bad}",
+        "name": "Codex Resume",
+        "commandline": "pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -File \"%REGEN_ROOT%\\scripts\\codex-worktree-launch.ps1\" -Resume last",
+        "startingDirectory": "C:\\",
+        "colorScheme": "Dimidium",
+        "tabColor": "#0F766E",
+        "icon": "🧬",
+        "environment": { "CELL_ROLE": "codex" }
+      },
+      {
+        "guid": "{7f1f7b7e-ccd4-4bba-8c08-2ef0a0d4f0a1}",
+        "name": "CCandMe",
+        "commandline": "cmd.exe /k \"cd /d C:\\Dev\\CCandMe && node C:\\Dev\\CCandMe\\bin\\ccandme.mjs start\"",
+        "startingDirectory": "C:\\Dev\\CCandMe",
+        "icon": "🤝",
+        "hidden": false,
+        "environment": { "CELL_ROLE": "ccandme" }
+      },
+      {
+        "guid": "{767642b0-606c-468c-89a0-4573df6fcdaf}",
+        "name": "VS Code",
+        "commandline": "cmd.exe /c start \"\" \"%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe\" \"%REGEN_ROOT%\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "Dimidium",
+        "tabColor": "#2D5986",
+        "icon": "💻"
+      },
+      {
+        "guid": "{6cbd327a-5b5e-4e83-96f6-041615382d36}",
+        "name": "PowerShell (Admin)",
+        "commandline": "powershell.exe -NoLogo -NoExit -Command \"Set-Location -LiteralPath $env:REGEN_ROOT\"",
+        "startingDirectory": "C:\\",
+        "colorScheme": "LIFEAI Slate",
+        "tabColor": "#1E3A5F",
+        "icon": "🔒",
+        "elevate": true
+      },
+      {
+        "guid": "{a2f8548f-82e6-44b4-bdbb-d934e8881f01}",
+        "name": "Co Develop Claude",
+        "commandline": "cmd.exe /k \"%APPDATA%\\clauth\\codevelop-claude.cmd\"",
+        "startingDirectory": "C:\\Dev\\regen-root",
+        "colorScheme": "Dimidium",
+        "tabColor": "#B91C1C",
+        "icon": "🔴",
+        "environment": { "CELL_ROLE": "codevelop-claude" }
+      },
+      {
+        "guid": "{31a52b07-6efd-4b3d-96dd-ded73488140a}",
+        "name": "Co Develop Codex",
+        "commandline": "cmd.exe /k \"%APPDATA%\\clauth\\codevelop-codex.cmd\"",
+        "startingDirectory": "C:\\Dev\\regen-root",
+        "colorScheme": "Dimidium",
+        "tabColor": "#0F766E",
+        "icon": "🧬",
+        "environment": { "CELL_ROLE": "codevelop-codex" }
+      },
+      { "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}", "name": "Windows PowerShell",                 "hidden": true },
+      { "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}", "name": "Azure Cloud Shell",                  "hidden": true, "source": "Windows.Terminal.Azure" },
+      { "guid": "{e5f47bfb-07fc-593b-8566-5c3a54921b08}", "name": "Developer Command Prompt for VS 2022","hidden": true, "source": "Windows.Terminal.VisualStudio" },
+      { "guid": "{87997379-a742-5742-9540-db01cfd37f69}", "name": "Developer PowerShell for VS 2022",    "hidden": true, "source": "Windows.Terminal.VisualStudio" },
+      { "guid": "{46b417fd-4d15-5cae-9ec7-4d28f0c81a2d}", "name": "Developer Command Prompt for VS 2019","hidden": true, "source": "Windows.Terminal.VisualStudio" },
+      { "guid": "{f46cd382-fdc2-5779-ae26-7e46def3434c}", "name": "Developer PowerShell for VS 2019",    "hidden": true, "source": "Windows.Terminal.VisualStudio" },
+      { "guid": "{16208362-94fc-5b1f-a491-5b2624d5ab56}", "name": "Visual Studio Debug Console",         "hidden": true, "source": "VSDebugConsole" },
+      { "guid": "{0bb6b576-2a30-5b9c-b37d-18b6594ab53c}", "name": "Ubuntu-24.04",                        "hidden": false, "source": "Microsoft.WSL" }
+    ]
+  },
+
+  "schemes": [
+    {
+      "name": "Dimidium",
+      "background": "#151413", "foreground": "#D8D2C8",
+      "cursorColor": "#B7A98F", "selectionBackground": "#3A3631",
+      "black": "#191816", "brightBlack": "#5A534A",
+      "red": "#B66A60", "brightRed": "#D08378",
+      "green": "#86A36F", "brightGreen": "#A0BF86",
+      "yellow": "#C2A56D", "brightYellow": "#D6BA82",
+      "blue": "#7F94A8", "brightBlue": "#99AFC4",
+      "purple": "#A98BA8", "brightPurple": "#C2A3C0",
+      "cyan": "#7FA39A", "brightCyan": "#98BDB4",
+      "white": "#D8D2C8", "brightWhite": "#F4EEE5"
+    },
+    {
+      "name": "Dracula",
+      "background": "#282A36", "foreground": "#F8F8F2",
+      "cursorColor": "#F8F8F2", "selectionBackground": "#44475A",
+      "black": "#21222C", "brightBlack": "#6272A4",
+      "red": "#FF5555", "brightRed": "#FF6E6E",
+      "green": "#50FA7B", "brightGreen": "#69FF94",
+      "yellow": "#F1FA8C", "brightYellow": "#FFFFA5",
+      "blue": "#BD93F9", "brightBlue": "#D6ACFF",
+      "purple": "#BD93F9", "brightPurple": "#FF92DF",
+      "cyan": "#8BE9FD", "brightCyan": "#A4FFFF",
+      "white": "#F8F8F2", "brightWhite": "#FFFFFF"
+    },
+    {
+      "name": "LIFEAI Claude",
+      "background": "#1A0F0A", "foreground": "#F0D9C8",
+      "cursorColor": "#CC785C", "selectionBackground": "#3D1F10",
+      "black": "#1A1A2E", "brightBlack": "#5A3A2A",
+      "red": "#E06C75", "brightRed": "#FF7B86",
+      "green": "#3ECF8E", "brightGreen": "#6EF0B0",
+      "yellow": "#E5C07B", "brightYellow": "#F0D09B",
+      "blue": "#61AFEF", "brightBlue": "#88C8FF",
+      "purple": "#C678DD", "brightPurple": "#E090F0",
+      "cyan": "#56B6C2", "brightCyan": "#7DD6E0",
+      "white": "#F0D9C8", "brightWhite": "#FFF5EE"
+    },
+    {
+      "name": "LIFEAI Dark",
+      "background": "#0D1F17", "foreground": "#D4E9D4",
+      "cursorColor": "#3ECF8E", "selectionBackground": "#1A6B3C",
+      "black": "#1A1A2E", "brightBlack": "#4A4A6A",
+      "red": "#E06C75", "brightRed": "#FF7B86",
+      "green": "#3ECF8E", "brightGreen": "#6EF0B0",
+      "yellow": "#E5C07B", "brightYellow": "#F0D09B",
+      "blue": "#61AFEF", "brightBlue": "#88C8FF",
+      "purple": "#C678DD", "brightPurple": "#E090F0",
+      "cyan": "#56B6C2", "brightCyan": "#7DD6E0",
+      "white": "#ABB2BF", "brightWhite": "#DCE4EF"
+    },
+    {
+      "name": "LIFEAI Slate",
+      "background": "#0F1923", "foreground": "#CDD6E0",
+      "cursorColor": "#61AFEF", "selectionBackground": "#1E3A5F",
+      "black": "#1A1A2E", "brightBlack": "#3A4A5A",
+      "red": "#E06C75", "brightRed": "#FF7B86",
+      "green": "#3ECF8E", "brightGreen": "#6EF0B0",
+      "yellow": "#E5C07B", "brightYellow": "#F0D09B",
+      "blue": "#61AFEF", "brightBlue": "#88C8FF",
+      "purple": "#C678DD", "brightPurple": "#E090F0",
+      "cyan": "#56B6C2", "brightCyan": "#7DD6E0",
+      "white": "#ABB2BF", "brightWhite": "#DCE4EF"
+    }
+  ],
+
+  "themes": [],
+  "compatibility.allowHeadless": true
+}

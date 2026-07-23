@@ -1,0 +1,84 @@
+Windows Registry Editor Version 5.00
+
+; Regen Media — Upload context menu for image files
+; Adds "Upload to Regen Media" to right-click menu for common image formats
+; Uses HKEY_CURRENT_USER — no admin required
+
+; ---- .jpg ----
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.jpg\shell\Upload to Regen Media]
+"MuiVerb"="Upload to Regen Media"
+"Icon"="%SystemRoot%\\System32\\imageres.dll,-70"
+
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.jpg\shell\Upload to Regen Media\command]
+@="powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"C:\\Dev\\regen-root\\scripts\\upload-to-media.ps1\" \"%1\""
+
+; ---- .jpeg ----
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.jpeg\shell\Upload to Regen Media]
+"MuiVerb"="Upload to Regen Media"
+"Icon"="%SystemRoot%\\System32\\imageres.dll,-70"
+
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.jpeg\shell\Upload to Regen Media\command]
+@="powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"C:\\Dev\\regen-root\\scripts\\upload-to-media.ps1\" \"%1\""
+
+; ---- .png ----
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\Upload to Regen Media]
+"MuiVerb"="Upload to Regen Media"
+"Icon"="%SystemRoot%\\System32\\imageres.dll,-70"
+
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.png\shell\Upload to Regen Media\command]
+@="powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"C:\\Dev\\regen-root\\scripts\\upload-to-media.ps1\" \"%1\""
+
+; ---- .webp ----
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.webp\shell\Upload to Regen Media]
+"MuiVerb"="Upload to Regen Media"
+"Icon"="%SystemRoot%\\System32\\imageres.dll,-70"
+
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.webp\shell\Upload to Regen Media\command]
+@="powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"C:\\Dev\\regen-root\\scripts\\upload-to-media.ps1\" \"%1\""
+
+; ---- .gif ----
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.gif\shell\Upload to Regen Media]
+"MuiVerb"="Upload to Regen Media"
+"Icon"="%SystemRoot%\\System32\\imageres.dll,-70"
+
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.gif\shell\Upload to Regen Media\command]
+@="powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"C:\\Dev\\regen-root\\scripts\\upload-to-media.ps1\" \"%1\""
+
+; ---- .tiff ----
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.tiff\shell\Upload to Regen Media]
+"MuiVerb"="Upload to Regen Media"
+"Icon"="%SystemRoot%\\System32\\imageres.dll,-70"
+
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.tiff\shell\Upload to Regen Media\command]
+@="powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"C:\\Dev\\regen-root\\scripts\\upload-to-media.ps1\" \"%1\""
+
+; ---- .tif ----
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.tif\shell\Upload to Regen Media]
+"MuiVerb"="Upload to Regen Media"
+"Icon"="%SystemRoot%\\System32\\imageres.dll,-70"
+
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.tif\shell\Upload to Regen Media\command]
+@="powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"C:\\Dev\\regen-root\\scripts\\upload-to-media.ps1\" \"%1\""
+
+; ---- .bmp ----
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.bmp\shell\Upload to Regen Media]
+"MuiVerb"="Upload to Regen Media"
+"Icon"="%SystemRoot%\\System32\\imageres.dll,-70"
+
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.bmp\shell\Upload to Regen Media\command]
+@="powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"C:\\Dev\\regen-root\\scripts\\upload-to-media.ps1\" \"%1\""
+
+; ---- .zip (bulk upload) ----
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.zip\shell\Upload to Regen Media]
+"MuiVerb"="Upload to Regen Media"
+"Icon"="%SystemRoot%\\System32\\imageres.dll,-70"
+
+[HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\.zip\shell\Upload to Regen Media\command]
+@="powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \"C:\\Dev\\regen-root\\scripts\\upload-to-media.ps1\" \"%1\""
+
+; ---- Browse Regen Media — directory background ----
+[HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\Browse Regen Media]
+@="Browse Regen Media"
+
+[HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\Browse Regen Media\command]
+@="cmd /c start https://media-manager.dev.regendevcorp.com"
