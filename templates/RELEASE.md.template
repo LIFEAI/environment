@@ -1,0 +1,20 @@
+# RELEASE — {{name}}
+
+## Environments
+
+| Environment | Supported | Build Command | Start Command |
+|-------------|-----------|---------------|---------------|
+| Local dev (PM2) | {{local_dev}} | {{build_command}} | {{start_command}} |
+| Production (Coolify) | {{production}} | {{prod_build_command}} | via Dockerfile |
+
+## Version Source
+- `package.json` → `version`
+
+## Required Environment Variables
+{{env_required}}
+
+## Dependencies
+{{dependencies}}
+
+## Release Procedure
+{{release_procedure}}
