@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "projects": {
+    "regen-root": {
+      "path": "C:/Dev/regen-root",
+      "lock_file": "environment.lock.json",
+      "description": "LIFEAI monorepo — apps, packages, sites, models, MCP servers"
+    },
+    "clauth": {
+      "path": "C:/Dev/clauth",
+      "lock_file": null,
+      "description": "Hardware-bound credential vault daemon"
+    }
+  }
+}
