@@ -1,0 +1,25 @@
+{
+  "description": "CodeFlow environment defaults — provisioner seeds ~/.codeflow/ from these if missing",
+  "active_brain": {
+    "active": "dev"
+  },
+  "neo4j": {
+    "local_uri": "neo4j://127.0.0.1:7687",
+    "test_uri": "bolt://127.0.0.1:7688",
+    "database": "codeflow",
+    "username": "neo4j",
+    "password_clauth": "neo4j-local",
+    "test_password_clauth": "neo4j-test"
+  },
+  "gateway": {
+    "port": 3109,
+    "brain": "dev",
+    "remote_target": "https://codeflow-pm2.regendevcorp.com/mcp"
+  },
+  "test_rig": {
+    "port": 3129
+  },
+  "explorer": {
+    "port": 3108
+  }
+}

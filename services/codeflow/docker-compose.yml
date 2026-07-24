@@ -1,0 +1,58 @@
+# CodeFlow — Neo4j Community Edition substrate
+# Single `codeflow` database; generation isolation at property level (generation_id on every node/edge).
+# See: .rdc/plans/codeflow-checkpoint-e-launch-initiation.md D4 + WP-1
+#
+# Usage:
+#   cp docker/neo4j.env.example docker/neo4j.env   # fill in credentials
+#   docker compose --env-file docker/neo4j.env up -d
+#
+# Requires Docker Desktop (or Docker Engine) to be running.
+
+services:
+  neo4j:
+    # Pin Community Edition 5.20.0 — Community supports exactly one user database.
+    # Enterprise-only features (multi-DB alias swap) are explicitly NOT used; see D4.
+    image: neo4j:5.20.0-community
+    container_name: codeflow-neo4j
+    restart: unless-stopped
+    mem_limit: 3g
+
+    ports:
+      - "7474:7474"   # HTTP browser / REST
+      - "7687:7687"   # Bolt protocol (driver connection)
+
+    volumes:
+      - codeflow-neo4j-data:/data       # persistent graph store
+      - codeflow-neo4j-logs:/logs       # optional: persist logs across restarts
+
+    env_file:
+      - neo4j.env
+
+    environment:
+      # Explicit edition declaration — makes contract test straightforward to grep.
+      NEO4J_EDITION: community
+      # Set the default (and only) user database to `codeflow`.
+      NEO4J_dbms_default__database: codeflow
+      # Allow unauthenticated local connections (override in neo4j.env for auth).
+      # NEO4J_AUTH is sourced from neo4j.env; this line is a no-op reminder.
+      # Memory tuning — sensible defaults for a laptop install.
+      NEO4J_server_memory_heap_initial__size: "512m"
+      NEO4J_server_memory_heap_max__size: "1g"
+      NEO4J_server_memory_pagecache_size: "512m"
+      NEO4J_dbms_memory_transaction_total_max: "1g"
+      # Accept licence (Community Edition has no EULA, but set for clarity).
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: "yes"
+
+    healthcheck:
+      # Probe the HTTP listener; the Neo4j image does not ship curl.
+      test: ["CMD-SHELL", "bash -lc '</dev/tcp/127.0.0.1/7474' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12      # 12 × 5s = 60s max wait (matches provision script timeout)
+      start_period: 20s
+
+volumes:
+  codeflow-neo4j-data:
+    name: codeflow-neo4j-data
+  codeflow-neo4j-logs:
+    name: codeflow-neo4j-logs

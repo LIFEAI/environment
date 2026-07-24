@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "description": "MCP servers the environment provisions. Local servers run via PM2; remote servers need clauth endpoint + secret.",
+  "local": {
+    "rdc-skills-mcp": {
+      "install": "npm install -g @lifeai/rdc-skills",
+      "start": "pm2 start rdc-skills-mcp",
+      "health": "http://127.0.0.1:3200/health",
+      "pm2_name": "rdc-skills-mcp",
+      "note": "Installed as npm global AND runs as PM2 MCP server"
+    },
+    "codeflow-mcp": {
+      "install": "pnpm --filter @regen/codeflow esbuild",
+      "start": "node scripts/codeflow-up.mjs",
+      "health": "http://127.0.0.1:3109/health",
+      "pm2_name": "codeflow-mcp",
+      "note": "Local gateway routes to PM2 brain on Vultr"
+    }
+  },
+  "remote": {
+    "web-research": {
+      "endpoint_clauth": "mcp-web-research-endpoint",
+      "secret_clauth": "mcp-web-research-secret",
+      "health": "https://research.regendevcorp.com/health"
+    },
+    "regen-media": {
+      "endpoint_clauth": "mcp-regen-media-endpoint",
+      "secret_clauth": "mcp-regen-media-secret",
+      "health": "https://media.regendevcorp.com/health"
+    },
+    "fs-mcp": {
+      "endpoint_clauth": "mcp-fs-endpoint",
+      "health": null,
+      "note": "File System MCP bridge for claude.ai"
+    }
+  },
+  "claude_ai_connectors": {
+    "note": "These are configured manually in claude.ai Settings → Integrations. The provisioner verifies clauth has the required endpoint/secret entries.",
+    "required": [
+      "Supabase",
+      "Codeflow",
+      "RDC-Skills",
+      "File System",
+      "Talk with CLI",
+      "Woop Social",
+      "clauth",
+      "web-research",
+      "regen-media",
+      "Google Drive",
+      "Microsoft 365",
+      "LunarCrush",
+      "Excalidraw"
+    ]
+  }
+}
