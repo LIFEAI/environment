@@ -1,0 +1,24 @@
+[shell_environment_policy]
+inherit = "all"
+
+[features]
+goals = true
+
+[shell_environment_policy.set]
+NODE_REPL_NODE_PATH = "C:\\Program Files\\nodejs\\node.exe"
+CODEX_NODE_PATH = "C:\\Program Files\\nodejs\\node.exe"
+ANTHROPIC_CUSTOM_MODEL_OPTION = "claude-opus-4-7"
+ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION = "Opus 4.7 — xhigh effort, new tokenizer, ~35% more tokens per request"
+ANTHROPIC_CUSTOM_MODEL_OPTION_NAME = "Opus 4.7"
+ANTHROPIC_DEFAULT_OPUS_MODEL = "claude-opus-4-6"
+CORPUS_ROOT = "H:\\My Drive\\global-corpus"
+LOCAL_CORPUS_ROOT = "C:\\Dev\\local-corpus"
+
+[projects.'c:\dev\regen-root']
+trust_level = "trusted"
+
+[projects.'c:\dev\codeflow-bench']
+trust_level = "trusted"
+
+[windows]
+sandbox = "elevated"

@@ -1,0 +1,43 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "_comment": "The startup guard (session-start.sh) is run by scripts/cell-init.ps1 BEFORE Codex launches, in the visible terminal and with no hook timeout. Codex's harness does not surface SessionStart-hook stdout and its hook timeout killed the guard's cold run (-> exited 1), so it is intentionally NOT a SessionStart hook here. Only the lightweight Dev Center check-in runs as a hook.",
+            "type": "command",
+            "command": "pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:/Dev/regen-root/scripts/dev-center-runtime-checkin.ps1\" -Engine codex -Capabilities tail",
+            "timeout": 15,
+            "statusMessage": "Checking in with Dev Center..."
+          },
+          {
+            "_comment": "Temporal Context Protocol marker/briefing. Codex may not surface SessionStart stdout, but the marker read still proves the previous timestamp and the managed Stop hook writes the next one.",
+            "type": "command",
+            "command": "node \"C:/Dev/regen-root/scripts/temporal-context.mjs\" start --engine codex",
+            "timeout": 8,
+            "statusMessage": "Temporal context: reading last_seen and current deltas..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:/Dev/regen-root/.codex/hooks/require-codeflow-up.js\"",
+            "timeout": 8,
+            "statusMessage": "Verifying CodeFlow is up..."
+          },
+          {
+            "type": "command",
+            "command": "node \"C:/Dev/regen-root/.codex/hooks/codeflow-preflight.js\"",
+            "timeout": 10,
+            "statusMessage": "Checking CodeFlow preflight..."
+          }
+        ]
+      }
+    ]
+  }
+}
