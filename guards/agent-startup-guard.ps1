@@ -404,11 +404,17 @@ function Ensure-CodeFlow {
     Start-Sleep -Seconds 3
   }
 
-  Write-GuardLog 'codeflow: starting PM2 service with preserved active brain'
+  Write-GuardLog 'codeflow: recovering via blue-green controller'
   $node = Assert-Command node
-  & $node (Join-Path $RepoRoot 'scripts\codeflow-up.mjs') --restart-if-stale | Out-Null
+  $bgScript = Join-Path $RepoRoot 'scripts\codeflow-bluegreen.mjs'
+  if (Test-Path $bgScript) {
+    & $node $bgScript recover | Out-Null
+  } else {
+    Write-GuardLog 'codeflow: WARN codeflow-bluegreen.mjs not found, trying codeflow-up probe-only'
+    & $node (Join-Path $RepoRoot 'scripts\codeflow-up.mjs') | Out-Null
+  }
   # 15s per-probe timeout: remote-brain /health takes ~6s (see Ensure-CodeFlow note).
-  if (-not (Wait-HttpOk $health 45 15)) { throw 'CodeFlow did not answer /health after PM2 start.' }
+  if (-not (Wait-HttpOk $health 45 15)) { throw 'CodeFlow did not answer /health after blue-green recover.' }
   $pm2 = Assert-Command pm2
   & $pm2 save | Out-Null
   Write-GuardLog 'codeflow: ready'
