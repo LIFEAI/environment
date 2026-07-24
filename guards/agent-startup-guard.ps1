@@ -20,7 +20,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$RepoRoot = Split-Path -Parent $PSScriptRoot
+$RepoRoot = if ($env:PROJECT_ROOT) { $env:PROJECT_ROOT } else { Split-Path -Parent $PSScriptRoot }
 $LogDir = Join-Path $RepoRoot '.codex'
 $LogFile = Join-Path $LogDir 'agent-startup-guard.log'
 $StampFile = Join-Path $env:LOCALAPPDATA 'regen-root-agent-startup.ok'

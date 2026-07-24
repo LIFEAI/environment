@@ -1,5 +1,5 @@
 param(
-  [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path,
+  [string]$RepoRoot = $(if ($env:PROJECT_ROOT) { $env:PROJECT_ROOT } else { (Resolve-Path (Join-Path $PSScriptRoot '..')).Path }),
   [int]$MinAgeSeconds = 15,
   [switch]$CleanAgentBrowsers,
   [switch]$CleanAgentDevServers,

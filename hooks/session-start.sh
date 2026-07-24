@@ -7,7 +7,7 @@
 # to abort. Instead we raise a loud, unmissable STOP banner on stdout, which Claude Code
 # injects into the session as context for both Dave and the agent. The banner IS the gate.
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+REPO_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 GUARD_LOG="$REPO_ROOT/.codex/agent-startup-guard.log"
 skip_corpus_sync=0
 
