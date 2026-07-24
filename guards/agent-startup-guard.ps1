@@ -386,20 +386,20 @@ function Ensure-CodeFlow {
     return
   }
 
-  # The local gateway is a passthrough proxy to PM2 brain on Vultr — no Docker/Neo4j needed.
-  # Just start the PM2 process with the right config.
-  Write-GuardLog 'codeflow: starting gateway (passthrough to PM2 brain)'
+  # Gateway is down. Blue-green recover builds dist if needed and starts the
+  # gateway in a managed slot with hot-swap capability. No Docker/Neo4j needed
+  # for the local relay — the brain lives on Vultr PM2.
+  Write-GuardLog 'codeflow: recovering gateway via blue-green controller'
   $node = Assert-Command node
-  $pm2 = Assert-Command pm2
-  $dist = Join-Path $RepoRoot 'packages\codeflow\dist\server.js'
-  $cf = Join-Path $RepoRoot 'packages\codeflow'
-  if (-not (Test-Path $dist)) {
-    Write-GuardLog 'codeflow: dist missing — building'
-    & $node (Join-Path $RepoRoot 'node_modules\.bin\pnpm') --filter '@regen/codeflow' esbuild | Out-Null
+  $bgScript = Join-Path $RepoRoot 'scripts\codeflow-bluegreen.mjs'
+  if (Test-Path $bgScript) {
+    & $node $bgScript recover | Out-Null
+  } else {
+    Write-GuardLog 'codeflow: WARN codeflow-bluegreen.mjs not found — cannot start gateway'
+    throw 'CodeFlow gateway down and codeflow-bluegreen.mjs not available for recovery.'
   }
-  & $pm2 start $dist --name codeflow-mcp --cwd $cf --node-args "--import=tsx" --update-env | Out-Null
   # 15s per-probe timeout: remote-brain /health takes ~6s.
-  if (-not (Wait-HttpOk $health 45 15)) { throw 'CodeFlow gateway did not answer /health after pm2 start.' }
+  if (-not (Wait-HttpOk $health 45 15)) { throw 'CodeFlow gateway did not answer /health after blue-green recover.' }
   $pm2 = Assert-Command pm2
   & $pm2 save | Out-Null
   Write-GuardLog 'codeflow: ready'
