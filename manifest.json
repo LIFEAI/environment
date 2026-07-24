@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "name": "lifeai-environment",
+  "version": "0.2.0",
+  "description": "LIFEAI Environment Harness — machine provisioning, service management, session orchestration",
+  "commands": {
+    "provision": {
+      "script": "provision.ps1",
+      "description": "Full environment setup — bare metal or transition",
+      "args": "-ProjectRoot <path> [-Force] [-DryRun] [-SkipTools]"
+    },
+    "audit": {
+      "script": "audit/audit.ps1",
+      "description": "Check installed tool versions against lock file requirements",
+      "args": "-ProjectRoot <path> [-Json]"
+    },
+    "mcps": {
+      "script": "services/install-mcps.ps1",
+      "description": "Verify and install MCP servers",
+      "args": "-ProjectRoot <path> [-Fix]"
+    }
+  },
+  "directories": {
+    "hooks": "Claude Code + Codex session hooks",
+    "codex": "Codex engine config (CODEX.md, hooks, config.toml)",
+    "guards": "Session gatekeepers (startup guard, cleanup)",
+    "pool": "Worktree pool engine (warm pool, lock-claiming)",
+    "sessions": "Agent session orchestration (cell-init, codevelop, cockpit)",
+    "services": "Daemon lifecycle (clauth, dev-center, MCPs, CodeFlow)",
+    "machines": "Machine provisioning (tool install, autostart, context menu)",
+    "sync": "Corpus + environment synchronization",
+    "editors": "Installable editor configs (VSCode, Codex, PowerShell)",
+    "terminals": "Installable terminal packages (WezTerm, Windows Terminal)",
+    "platform": "External infrastructure (Coolify, Docker, deploy scripts)",
+    "audit": "Drift detection + health check runners",
+    "contracts": "Tool version requirement schemas",
+    "templates": "Convention templates (RELEASE.md)"
+  },
+  "env_var": "LIFEAI_ENV",
+  "default_path": "C:/Dev/lifeai-env",
+  "project_map": "projects.json"
+}
