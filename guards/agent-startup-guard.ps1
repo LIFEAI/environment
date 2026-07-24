@@ -386,35 +386,20 @@ function Ensure-CodeFlow {
     return
   }
 
-  Ensure-Docker
-
-  $composeDir = Join-Path $RepoRoot 'packages\codeflow\docker'
-  Write-GuardLog 'codeflow: starting Neo4j'
-  Push-Location $composeDir
-  try {
-    & docker compose up -d | Out-Null
-  } finally {
-    Pop-Location
-  }
-
-  $deadline = (Get-Date).AddSeconds(90)
-  while ((Get-Date) -lt $deadline) {
-    $healthStatus = (& docker inspect --format='{{.State.Health.Status}}' codeflow-neo4j 2>$null)
-    if ($healthStatus -eq 'healthy') { break }
-    Start-Sleep -Seconds 3
-  }
-
-  Write-GuardLog 'codeflow: recovering via blue-green controller'
+  # The local gateway is a passthrough proxy to PM2 brain on Vultr — no Docker/Neo4j needed.
+  # Just start the PM2 process with the right config.
+  Write-GuardLog 'codeflow: starting gateway (passthrough to PM2 brain)'
   $node = Assert-Command node
-  $bgScript = Join-Path $RepoRoot 'scripts\codeflow-bluegreen.mjs'
-  if (Test-Path $bgScript) {
-    & $node $bgScript recover | Out-Null
-  } else {
-    Write-GuardLog 'codeflow: WARN codeflow-bluegreen.mjs not found, trying codeflow-up probe-only'
-    & $node (Join-Path $RepoRoot 'scripts\codeflow-up.mjs') | Out-Null
+  $pm2 = Assert-Command pm2
+  $dist = Join-Path $RepoRoot 'packages\codeflow\dist\server.js'
+  $cf = Join-Path $RepoRoot 'packages\codeflow'
+  if (-not (Test-Path $dist)) {
+    Write-GuardLog 'codeflow: dist missing — building'
+    & $node (Join-Path $RepoRoot 'node_modules\.bin\pnpm') --filter '@regen/codeflow' esbuild | Out-Null
   }
-  # 15s per-probe timeout: remote-brain /health takes ~6s (see Ensure-CodeFlow note).
-  if (-not (Wait-HttpOk $health 45 15)) { throw 'CodeFlow did not answer /health after blue-green recover.' }
+  & $pm2 start $dist --name codeflow-mcp --cwd $cf --node-args "--import=tsx" --update-env | Out-Null
+  # 15s per-probe timeout: remote-brain /health takes ~6s.
+  if (-not (Wait-HttpOk $health 45 15)) { throw 'CodeFlow gateway did not answer /health after pm2 start.' }
   $pm2 = Assert-Command pm2
   & $pm2 save | Out-Null
   Write-GuardLog 'codeflow: ready'
