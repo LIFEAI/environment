@@ -342,6 +342,35 @@ function Ensure-RdcSkills {
   }
 }
 
+function Ensure-PnpmInstall {
+  $lockFile = Join-Path $RepoRoot 'pnpm-lock.yaml'
+  $stampFile = Join-Path $RepoRoot 'node_modules\.pnpm-install-stamp'
+  if (-not (Test-Path $lockFile)) { return }
+  $lockMtime = (Get-Item $lockFile).LastWriteTimeUtc
+  $needsInstall = $false
+  if (-not (Test-Path $stampFile)) {
+    $needsInstall = $true
+  } else {
+    $stampMtime = (Get-Item $stampFile).LastWriteTimeUtc
+    if ($lockMtime -gt $stampMtime) { $needsInstall = $true }
+  }
+  if ($needsInstall) {
+    Write-GuardLog 'pnpm-install: lockfile newer than last install — running pnpm install'
+    $pnpm = Assert-Command pnpm
+    Push-Location $RepoRoot
+    try {
+      & $pnpm install --frozen-lockfile 2>&1 | Out-Null
+      # Stamp the install time so we don't re-run on next session
+      [IO.File]::WriteAllText($stampFile, (Get-Date -Format 'o'))
+      Write-GuardLog 'pnpm-install: done'
+    } catch {
+      Write-GuardLog "pnpm-install: WARN failed — $($_.Exception.Message)"
+    } finally {
+      Pop-Location
+    }
+  }
+}
+
 function Ensure-Docker {
   $docker = Assert-Command docker
   & $docker info *> $null
@@ -711,6 +740,7 @@ try {
   Ensure-EnvironmentRepo
   Ensure-Clauth
   Ensure-RdcSkills
+  Ensure-PnpmInstall
   Ensure-CodeFlow
   Ensure-DevCenter
   Ensure-AgentReadiness
