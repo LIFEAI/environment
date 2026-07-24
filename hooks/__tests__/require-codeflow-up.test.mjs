@@ -99,8 +99,8 @@ test('scoped command marker is implemented with parity across Claude and Codex h
     assert.ok(source.includes(`p === '.claude/hooks/require-codeflow-up.js'`));
     assert.ok(source.includes(`p === '.codex/hooks/require-codeflow-up.js'`));
     assert.ok(source.includes(`p.startsWith('packages/codeflow/')`));
-    assert.ok(source.includes(`scripts\\/codeflow-bluegreen\\.mjs`));
-    assert.match(source, /[Bb]lue\/green repair/);
+    assert.ok(source.includes(`scripts\\/codeflow-repair\\.mjs`));
+    assert.match(source, /codeflow-bluegreen/);
   }
 });
 
@@ -127,7 +127,7 @@ test('CodeFlow self-repair env bypass does not allow the local PM2 ecosystem con
 test('command-scoped marker allows CodeFlow repair targets only', () => {
   const payload = {
     tool_name: 'Bash',
-    tool_input: { command: 'CODEFLOW_SELF_REPAIR=1 node scripts/codeflow-bluegreen.mjs recover' },
+    tool_input: { command: 'CODEFLOW_SELF_REPAIR=1 node scripts/codeflow-repair.mjs' },
   };
   for (const script of hooks) {
     const output = runHook(script, payload);
@@ -231,7 +231,7 @@ test('marked raw pm2 codeflow lifecycle commands do not pass', () => {
 test('marked compound repair-looking commands do not pass', () => {
   const payload = {
     tool_name: 'Bash',
-    tool_input: { command: 'CODEFLOW_SELF_REPAIR=1 node scripts/codeflow-bluegreen.mjs recover; echo nope' },
+    tool_input: { command: 'CODEFLOW_SELF_REPAIR=1 node scripts/codeflow-repair.mjs; echo nope' },
   };
   for (const script of hooks) {
     const output = runHook(script, payload);

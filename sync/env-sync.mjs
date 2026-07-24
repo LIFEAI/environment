@@ -181,7 +181,8 @@ function warnOtherBox() {
 }
 
 // ── Managed components ───────────────────────────────────────────────────────
-const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')), '..');
+const ENV_REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')), '..');
+const REPO = path.resolve(process.env.PROJECT_ROOT || process.env.REGEN_ROOT || 'C:/Dev/regen-root');
 const RDC_SKILLS_REPO = 'C:/Dev/rdc-skills';
 const MARKET_CLONE = path.join(HOME, '.claude/plugins/marketplaces/rdc-skills');
 const CACHE_PLUGIN = path.join(HOME, '.claude/plugins/cache/rdc-skills/rdc-skills/latest/.claude-plugin/plugin.json');
@@ -246,7 +247,7 @@ function fixRdcSkills() {
 function fixCodeflow() {
   const log = [];
   if (sh(`npm --prefix "${path.join(REPO, 'packages/codeflow')}" run esbuild`, { cwd: path.join(REPO, 'packages/codeflow') }) != null) log.push('rebuilt codeflow dist (esbuild)');
-  log.push('skipped codeflow-mcp restart; stable gateway is blue/green-owned (run node scripts/codeflow-bluegreen.mjs recover)');
+  log.push('skipped codeflow-mcp restart; stable gateway is engine-room-owned (run node scripts/codeflow-repair.mjs)');
   // hooks (endpoint config + registrations)
   sh(`node "${REPO}/scripts/claude-hooks/install-codeflow-hooks.mjs"`, { stdio: ['ignore', 'ignore', 'ignore'] });
   log.push('reinstalled codeflow hooks');
@@ -262,12 +263,12 @@ function fixCodeflow() {
 const NODE = process.execPath;
 const PWSH = 'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File';
 const SUB = {
-  mcp: path.join(REPO, 'scripts/dev-setup/patch-mcp-servers.mjs'),
-  shortcuts: path.join(REPO, 'scripts/dev-setup/patch-desktop-shortcuts.ps1'),
-  autostart: path.join(REPO, 'scripts/register-autostart.ps1'),
+  mcp: path.join(ENV_REPO, 'machines/patch-mcp-servers.mjs'),
+  shortcuts: path.join(ENV_REPO, 'machines/patch-desktop-shortcuts.ps1'),
+  autostart: path.join(ENV_REPO, 'machines/register-autostart.ps1'),
 };
 const AUTOSTART_LNK = path.join(HOME, 'AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/clauth-autostart.lnk');
-const CODEX_MANAGED_MIRROR = path.join(REPO, 'codex/requirements.managed.toml');
+const CODEX_MANAGED_MIRROR = path.join(ENV_REPO, 'codex/requirements.managed.toml');
 const CODEX_MANAGED_LIVE = 'C:/ProgramData/OpenAI/Codex/requirements.toml';
 
 function normalizeText(s) {

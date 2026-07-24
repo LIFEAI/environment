@@ -12,9 +12,10 @@
  * "Down" = the local router (:3109) does not answer `/health`. The response is
  * a PM2-owned readiness snapshot, so offline/unknown does not justify restarting
  * a responsive gateway. On down: DENY the tool. No hook may spin up a local
- * fallback gateway. Blue/green repair/probe shell commands, scoped CodeFlow fixer
- * tasks, and CODEFLOW_ENFORCE=0 pass through so the gate can never deadlock its
- * own fix.
+ * fallback gateway. Repair/probe shell commands, scoped CodeFlow fixer tasks,
+ * and CODEFLOW_ENFORCE=0 pass through so the gate can never deadlock its own
+ * fix. Bridge callers use `node scripts/codeflow-repair.mjs`; slot switching
+ * stays inside the engine-room controller.
  */
 const http = require('node:http');
 const fs = require('node:fs');
@@ -109,10 +110,11 @@ function plannedDowntimeActive() {
 function isRepairCommand(cmd) {
   const c = stripLeadingEnv(String(cmd || '').trim()).replace(/\\/g, '/');
   if (/[\r\n;&|`]/.test(c) || /\$\(/.test(c)) return false;
+  if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow-repair\.mjs\b/i.test(c)) return true;
   if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow-bluegreen\.mjs\b/i.test(c)) return true;
   if (/^(?:curl|wget)\b.*\b(?:127\.0\.0\.1:3109|localhost:3109)\b/i.test(c)) return true;
   if (/^pm2\s+(?:jlist|list|status|describe|info|logs)\b.*\bcodeflow\b/i.test(c)) return true;
-  if (/^ssh\b.*\b64\.237\.54\.189\b.*\b(?:codeflow-bluegreen|codeflow.*health|pm2\s+(?:jlist|list|status|describe|info|logs))\b/i.test(c)) return true;
+  if (/^ssh\b.*\b64\.237\.54\.189\b.*\b(?:codeflow-repair|codeflow-bluegreen|codeflow.*health|pm2\s+(?:jlist|list|status|describe|info|logs))\b/i.test(c)) return true;
   if (/^clauth\b/i.test(c)) return true;
   if (/^(?:\.\/)?scripts\/restart-clauth\.bat$/i.test(c)) return true;
   return false;
@@ -177,6 +179,7 @@ function isSelfRepairShellCommand(command) {
   const c = stripLeadingEnv(String(command || '').trim()).replace(/\\/g, '/');
   if (patchTargetsAreSelfRepair(c)) return true;
   if (/[\r\n;&|`]/.test(c) || /\$\(/.test(c)) return false;
+  if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow-repair\.mjs(?:\s+[\w=./:-]+)*$/i.test(c)) return true;
   if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow-bluegreen\.mjs(?:\s+[\w=./:-]+)*$/i.test(c)) return true;
   if (/^node\s+--test\s+\.claude\/hooks\/__tests__\/require-codeflow-up\.test\.mjs$/i.test(c)) return true;
   if (/^pnpm\s+--filter\s+@regen\/codeflow\s+exec\s+vitest\s+run(?:\s+src\/(?:brain\/(?:subsystems|readiness)\.test\.ts|mcp\/server\.test\.ts))+$/i.test(c)) return true;
@@ -247,8 +250,8 @@ function deny(status, gatewayLive = false) {
     '   The grep fallback is ONLY for a live-but-stale CodeFlow, never for a DOWN one.',
     gatewayLive
       ? '   The gateway was not restarted: a PM2 deep-health fault is not repaired by destroying its pool/cache.'
-      : '   No local fallback was started. Stable codeflow-mcp is blue/green-owned.',
-    '   Repair lane: use `node scripts/codeflow-bluegreen.mjs recover`; raw pm2 start/restart/delete is denied.',
+      : '   No local fallback was started. Stable codeflow-mcp is engine-room-owned.',
+    '   Repair lane: use `node scripts/codeflow-repair.mjs`; raw pm2 start/restart/delete is denied.',
     '   Break-glass (works mid-session — env vars set in a running shell do NOT reach this hook):',
     '     create a file at  .rdc/codeflow-break-glass  (repo)  or  ~/.codeflow/break-glass  (home) → gate opens; delete it to re-arm.',
     '   (CODEFLOW_ENFORCE=0 only works if exported BEFORE the session launched.)',
@@ -349,7 +352,7 @@ async function run() {
 
   // A responsive gateway with an unhealthy PM2 snapshot must not be restarted.
   // Restarting destroys shared pool/cache state and cannot repair a deep probe;
-  // the correct recovery remains blue/green repair or rehydration.
+  // the correct recovery remains the repair facade or rehydration.
   if (h.live) {
     return deny(h.status, true);
   }

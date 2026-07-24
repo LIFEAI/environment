@@ -8,17 +8,20 @@
 # Idempotent: (re)writes the .lnk to the correct target every run. No admin needed.
 #
 # Usage:
-#   powershell -ExecutionPolicy Bypass -File scripts/dev-setup/patch-desktop-shortcuts.ps1
+#   powershell -ExecutionPolicy Bypass -File machines/patch-desktop-shortcuts.ps1
 #   ... -Check     # report only, exit 1 if a shortcut is missing or mis-targeted
 
 param([switch]$Check)
 
 $ErrorActionPreference = 'Stop'
-$RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)  # scripts/dev-setup -> repo root
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+if ((Split-Path -Leaf $PSScriptRoot) -eq 'dev-setup') {
+  $RepoRoot = Split-Path -Parent $RepoRoot
+}
 
 # name -> target the .lnk must point at. Add future shortcuts here.
 $shortcuts = @(
-  @{ Name = 'Restart clauth'; Target = (Join-Path $RepoRoot 'scripts\restart-clauth.bat'); Icon = 'C:\Windows\System32\shell32.dll,238'; Desc = 'Shut down and restart the clauth credential daemon' }
+  @{ Name = 'Restart clauth'; Target = (Join-Path $RepoRoot 'services\restart-clauth.bat'); Icon = 'C:\Windows\System32\shell32.dll,238'; Desc = 'Shut down and restart the clauth credential daemon' }
 )
 
 $desktop = [Environment]::GetFolderPath('Desktop')

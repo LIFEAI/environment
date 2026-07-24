@@ -16,11 +16,11 @@
  *     quality fallback — that path is untouched and correct.)
  *   - Router down → DENY this tool call (any tool: Read/Edit/Bash/Grep/Task/MCP/…).
  *     No hook may spin up a local fallback gateway. Repair must go through the
- *     blue/green controller (`node scripts/codeflow-bluegreen.mjs recover`) or
- *     a read-only diagnostic/probe command.
+ *     bridge-safe repair facade (`node scripts/codeflow-repair.mjs`), which may
+ *     call the blue/green controller inside the engine room.
  *
  * Never-deadlock escape hatches (so the router can always be fixed):
- *   - A Bash command that is itself a CodeFlow blue/green repair or read-only
+ *   - A Bash command that is itself a CodeFlow repair or read-only
  *     probe command is allowed through even while down.
  *   - A dedicated CodeFlow fixer session may set CODEFLOW_SELF_REPAIR=1, or a
  *     scoped CodeFlow/hook repair command may carry CODEFLOW_SELF_REPAIR=1.
@@ -129,10 +129,11 @@ function plannedDowntimeActive() {
 function isRepairCommand(cmd) {
   const c = stripLeadingEnv(String(cmd || '').trim()).replace(/\\/g, '/');
   if (/[\r\n;&|`]/.test(c) || /\$\(/.test(c)) return false;
+  if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow-repair\.mjs\b/i.test(c)) return true;
   if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow-bluegreen\.mjs\b/i.test(c)) return true;
   if (/^(?:curl|wget)\b.*\b(?:127\.0\.0\.1:3109|localhost:3109)\b/i.test(c)) return true;
   if (/^pm2\s+(?:jlist|list|status|describe|info|logs)\b.*\bcodeflow\b/i.test(c)) return true;
-  if (/^ssh\b.*\b64\.237\.54\.189\b.*\b(?:codeflow-bluegreen|codeflow.*health|pm2\s+(?:jlist|list|status|describe|info|logs))\b/i.test(c)) return true;
+  if (/^ssh\b.*\b64\.237\.54\.189\b.*\b(?:codeflow-repair|codeflow-bluegreen|codeflow.*health|pm2\s+(?:jlist|list|status|describe|info|logs))\b/i.test(c)) return true;
   if (/^clauth\b/i.test(c)) return true;
   if (/^(?:\.\/)?scripts\/restart-clauth\.bat$/i.test(c)) return true;
   return false;
@@ -199,6 +200,7 @@ function isSelfRepairShellCommand(command) {
   const c = stripLeadingEnv(String(command || '').trim()).replace(/\\/g, '/');
   if (patchTargetsAreSelfRepair(c)) return true;
   if (/[\r\n;&|`]/.test(c) || /\$\(/.test(c)) return false;
+  if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow-repair\.mjs(?:\s+[\w=./:-]+)*$/i.test(c)) return true;
   if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow-bluegreen\.mjs(?:\s+[\w=./:-]+)*$/i.test(c)) return true;
   if (/^node\s+--test\s+\.claude\/hooks\/__tests__\/require-codeflow-up\.test\.mjs$/i.test(c)) return true;
   if (/^pnpm\s+--filter\s+@regen\/codeflow\s+exec\s+vitest\s+run(?:\s+src\/(?:brain\/(?:subsystems|readiness)\.test\.ts|mcp\/server\.test\.ts))+$/i.test(c)) return true;
@@ -276,8 +278,8 @@ function deny(status, gatewayLive = false) {
     '',
     gatewayLive
       ? '   The gateway was not restarted: a PM2 deep-health fault is not repaired by destroying its pool/cache.'
-      : '   No local fallback was started. Stable codeflow-mcp is blue/green-owned.',
-    '   Repair lane: use `node scripts/codeflow-bluegreen.mjs recover`; raw pm2 start/restart/delete is denied.',
+      : '   No local fallback was started. Stable codeflow-mcp is engine-room-owned.',
+    '   Repair lane: use `node scripts/codeflow-repair.mjs`; raw pm2 start/restart/delete is denied.',
     '   Break-glass (works mid-session — env vars set in a running shell do NOT reach this hook):',
     '     create a file at  .rdc/codeflow-break-glass  (repo)  or  ~/.codeflow/break-glass  (home) → gate opens; delete it to re-arm.',
     '   (CODEFLOW_ENFORCE=0 only works if exported BEFORE the session launched.)',
@@ -386,7 +388,7 @@ async function run() {
 
   // A responsive gateway with an unhealthy PM2 snapshot must not be restarted.
   // Restarting destroys shared pool/cache state and cannot repair a deep probe;
-  // the correct recovery remains blue/green repair or rehydration.
+  // the correct recovery remains the repair facade or rehydration.
   if (h.live) {
     return deny(h.status, true);
   }
