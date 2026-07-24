@@ -43,7 +43,7 @@ import { fileURLToPath } from 'node:url';
 const execFileSync = (file, args, opts = {}) => _execFileSync(file, args, { windowsHide: true, ...opts });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const REPO_ROOT = path.resolve(__dirname, '..');
+export const REPO_ROOT = process.env.PROJECT_ROOT || path.resolve(__dirname, '..');
 export const WT_ROOT = (REPO_ROOT + '.wt').split(path.sep).join('/');
 export const POOL_DIR = path.join(REPO_ROOT, '.wt-pool');
 export const DEFAULT_POOL_SIZE = Number(process.env.CLAUDE_WT_POOL_SIZE) || 8;

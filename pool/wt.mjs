@@ -32,8 +32,9 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Repo root = parent of scripts/ (resolve from this file's location, not cwd).
-export const REPO_ROOT = path.resolve(__dirname, '..');
+// Repo root — prefer PROJECT_ROOT env var (set by environment harness shim),
+// fall back to parent of this file's location for direct invocation.
+export const REPO_ROOT = process.env.PROJECT_ROOT || path.resolve(__dirname, '..');
 // Sibling worktree root: C:/Dev/regen-root  ->  C:/Dev/regen-root.wt
 export const WT_ROOT = REPO_ROOT + '.wt';
 export const BASE_REMOTE = 'origin';

@@ -1,0 +1,16 @@
+node:internal/modules/cjs/loader:1228
+  throw err;
+  ^
+
+Error: Cannot find module 'C:\Dev\lifeai-env\scripts\codeflow-heal.mjs'
+[90m    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)[39m
+[90m    at Function._load (node:internal/modules/cjs/loader:1055:27)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:322:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)[39m
+[90m    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)[39m
+[90m    at node:internal/main/run_main_module:36:49[39m {
+  code: [32m'MODULE_NOT_FOUND'[39m,
+  requireStack: []
+}
+
+Node.js v22.14.0
