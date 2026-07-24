@@ -1,0 +1,92 @@
+# LIVE machine-level Codex managed-hooks policy source.
+# env-sync/provision install this to:
+#
+#     C:\ProgramData\OpenAI\Codex\requirements.toml
+#
+# Managed hooks are policy-trusted and path-independent. They are required for
+# Codex worktree lanes because per-project .codex/hooks.json trust is keyed by
+# absolute path and can silently no-op in fresh x-codex-* worktrees.
+
+[hooks]
+windows_managed_dir = 'C:\Dev\lifeai-env\hooks'
+
+[[hooks.PreToolUse]]
+matcher = ""
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = 'node "C:/Dev/lifeai-env/codex/hooks/codex-guards.mjs"'
+timeout = 6
+statusMessage = "Codex safety guards..."
+
+[[hooks.PermissionRequest]]
+matcher = ""
+[[hooks.PermissionRequest.hooks]]
+type = "command"
+command = 'node "C:/Dev/lifeai-env/hooks/permission-backstop.mjs"'
+timeout = 5
+statusMessage = "Permission safety backstop..."
+
+[[hooks.PreCompact]]
+[[hooks.PreCompact.hooks]]
+type = "command"
+command = 'node "C:/Dev/lifeai-env/hooks/precompact-snapshot.mjs"'
+timeout = 8
+statusMessage = "Snapshotting state before compaction..."
+
+[[hooks.PostToolUse]]
+matcher = ""
+[[hooks.PostToolUse.hooks]]
+type = "command"
+command = 'node "C:/Dev/lifeai-env/hooks/posttool-biome.mjs"'
+timeout = 12
+statusMessage = "Biome lint on changed file..."
+
+[[hooks.PostToolUse.hooks]]
+type = "command"
+command = 'node "C:/Dev/lifeai-env/hooks/posttool-secret-redact.mjs"'
+timeout = 8
+statusMessage = "Scanning tool output for secrets..."
+
+[[hooks.Stop]]
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'node "C:/Dev/regen-root/scripts/temporal-context.mjs" end --engine codex'
+timeout = 6
+statusMessage = "Temporal Context Protocol: recording last-seen marker..."
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'node "C:/Dev/lifeai-env/hooks/truth-gate.mjs"'
+timeout = 15
+statusMessage = "Truth Gate (managed): verifying capability claims..."
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'node "C:/Dev/lifeai-env/hooks/enforce-completion.mjs"'
+timeout = 12
+statusMessage = "Completion Gate (managed): checking for unfinished work..."
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'node "C:/Dev/lifeai-env/hooks/stop-test-nudge.mjs"'
+timeout = 10
+statusMessage = "Checking code changed this turn was verified..."
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "C:/Dev/regen-root/scripts/lessons-capture-backstop.ps1"'
+timeout = 12
+statusMessage = "Lessons backstop: validating captures..."
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'node "C:/Dev/lifeai-env/hooks/session-cost-log.mjs"'
+timeout = 8
+statusMessage = "Logging session token usage..."
+
+[[hooks.SubagentStop]]
+[[hooks.SubagentStop.hooks]]
+type = "command"
+command = 'node "C:/Dev/lifeai-env/hooks/truth-gate.mjs"'
+timeout = 15
+statusMessage = "Truth Gate (managed): verifying subagent claims..."

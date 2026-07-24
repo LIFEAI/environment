@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-  LIFEAI Environment provisioner — bare metal or transition.
+  LIFEAI Environment provisioner - bare metal or transition.
 
 .DESCRIPTION
   Single entry point for machine setup. Detects state and does the right thing:
@@ -52,10 +52,11 @@ function Step($n, $msg) { Write-Host "`n--- Step ${n}: $msg ---" -ForegroundColo
 
 Write-Host "`n=== LIFEAI Environment Provisioner ===" -ForegroundColor Cyan
 Write-Host "  Env repo:  $EnvRoot" -ForegroundColor Gray
-Write-Host "  Platform:  $($PSVersionTable.OS ?? $env:OS)" -ForegroundColor Gray
+$platform = if ($PSVersionTable.ContainsKey('OS') -and $PSVersionTable.OS) { $PSVersionTable.OS } else { $env:OS }
+Write-Host "  Platform:  $platform" -ForegroundColor Gray
 Write-Host "  Mode:      $(if ($DryRun) { 'DRY RUN' } else { 'LIVE' })" -ForegroundColor Gray
 
-# ── Step 1: LIFEAI_ENV system variable ────────────────────────────────────────
+# -- Step 1: LIFEAI_ENV system variable ----------------------------------------
 Step 1 'LIFEAI_ENV system variable'
 
 $currentEnv = [Environment]::GetEnvironmentVariable('LIFEAI_ENV', 'Machine')
@@ -71,13 +72,13 @@ if ($currentEnv -eq $EnvRoot) {
       Fail "Cannot set Machine-scope env var (needs elevation). Run as admin."
       Warn "Falling back to User scope..."
       [Environment]::SetEnvironmentVariable('LIFEAI_ENV', $EnvRoot, 'User')
-      Ok "Set LIFEAI_ENV=$EnvRoot (User scope — re-run as admin for Machine scope)"
+      Ok "Set LIFEAI_ENV=$EnvRoot (User scope - re-run as admin for Machine scope)"
     }
   } else {
     Log "Would set LIFEAI_ENV=$EnvRoot (Machine scope)"
   }
 } else {
-  Log "LIFEAI_ENV not set — setting to $EnvRoot"
+  Log "LIFEAI_ENV not set - setting to $EnvRoot"
   if (-not $DryRun) {
     try {
       [Environment]::SetEnvironmentVariable('LIFEAI_ENV', $EnvRoot, 'Machine')
@@ -85,7 +86,7 @@ if ($currentEnv -eq $EnvRoot) {
     } catch {
       Fail "Cannot set Machine-scope env var (needs elevation). Run as admin."
       [Environment]::SetEnvironmentVariable('LIFEAI_ENV', $EnvRoot, 'User')
-      Ok "Set LIFEAI_ENV=$EnvRoot (User scope — re-run as admin for Machine scope)"
+      Ok "Set LIFEAI_ENV=$EnvRoot (User scope - re-run as admin for Machine scope)"
     }
   } else {
     Log "Would set LIFEAI_ENV=$EnvRoot (Machine scope)"
@@ -93,13 +94,16 @@ if ($currentEnv -eq $EnvRoot) {
 }
 $env:LIFEAI_ENV = $EnvRoot
 
-# ── Step 2: Resolve project root(s) ──────────────────────────────────────────
+# -- Step 2: Resolve project root(s) -------------------------------------------
 Step 2 'Resolve project root(s)'
 
 $projectsFile = Join-Path $EnvRoot 'projects.json'
 $projects = @{}
 if (Test-Path $projectsFile) {
-  $projects = Get-Content $projectsFile -Raw | ConvertFrom-Json -AsHashtable
+  $projectsJson = Get-Content $projectsFile -Raw | ConvertFrom-Json
+  foreach ($prop in $projectsJson.PSObject.Properties) {
+    $projects[$prop.Name] = $prop.Value
+  }
   Ok "projects.json: $($projects.Count) project(s)"
 } else {
   Warn "No projects.json found at $projectsFile"
@@ -117,14 +121,14 @@ if ($ProjectRoot) {
 $env:PROJECT_ROOT = $resolvedRoot
 Log "PROJECT_ROOT=$resolvedRoot"
 
-# ── Step 3: Pull latest env repo ──────────────────────────────────────────────
+# -- Step 3: Pull latest env repo ----------------------------------------------
 Step 3 'Pull latest env repo'
 
 try {
   Push-Location $EnvRoot
   $behind = & git rev-list --count HEAD..origin/main 2>$null
   if ($behind -and [int]$behind -gt 0) {
-    Log "Behind origin/main by $behind commit(s) — pulling..."
+    Log "Behind origin/main by $behind commit(s) - pulling..."
     if (-not $DryRun) {
       & git pull origin main --ff-only 2>&1 | Out-Null
       Ok "Pulled $behind commit(s)"
@@ -140,7 +144,7 @@ try {
   Pop-Location
 }
 
-# ── Step 4: Verify consuming project shims ────────────────────────────────────
+# -- Step 4: Verify consuming project shims ------------------------------------
 Step 4 'Verify consuming project shims'
 
 if (Test-Path $resolvedRoot) {
@@ -173,14 +177,14 @@ if (Test-Path $resolvedRoot) {
     if ($shimCount -gt 0) {
       Ok "$shimCount shim(s) found, $brokenCount broken"
     } else {
-      Warn "No shims found in $shimDir — transition may not be complete"
+      Warn "No shims found in $shimDir - transition may not be complete"
     }
   }
 } else {
   Warn "Project root $resolvedRoot not found"
 }
 
-# ── Step 5: Tool versions ─────────────────────────────────────────────────────
+# -- Step 5: Tool versions ------------------------------------------------------
 Step 5 'Tool versions'
 
 if ($SkipTools) {
@@ -208,7 +212,7 @@ if ($SkipTools) {
   }
 }
 
-# ── Step 6: Hooks inventory ──────────────────────────────────────────────────
+# -- Step 6: Hooks inventory ----------------------------------------------------
 Step 6 'Hooks inventory'
 
 $hooksDir = Join-Path $EnvRoot 'hooks'
@@ -219,11 +223,29 @@ if (Test-Path $hooksDir) {
   Warn "No hooks/ directory in env repo"
 }
 
-# ── Summary ──────────────────────────────────────────────────────────────────
+$codexManagedSource = Join-Path $EnvRoot 'codex\requirements.managed.toml'
+$codexManagedLive = 'C:\ProgramData\OpenAI\Codex\requirements.toml'
+if (Test-Path $codexManagedSource) {
+  if (-not $DryRun) {
+    try {
+      New-Item -Force -ItemType Directory (Split-Path $codexManagedLive) | Out-Null
+      Copy-Item $codexManagedSource $codexManagedLive -Force
+      Ok "Codex managed hooks installed: $codexManagedLive"
+    } catch {
+      Warn "Could not install Codex managed hooks (needs elevation?): $($_.Exception.Message)"
+    }
+  } else {
+    Log "Would install Codex managed hooks: $codexManagedLive"
+  }
+} else {
+  Warn "Codex managed hooks source missing: $codexManagedSource"
+}
+
+# -- Summary -------------------------------------------------------------------
 Write-Host "`n=== Provisioning complete ===" -ForegroundColor Green
 Write-Host "  LIFEAI_ENV:    $env:LIFEAI_ENV" -ForegroundColor Gray
 Write-Host "  PROJECT_ROOT:  $env:PROJECT_ROOT" -ForegroundColor Gray
 Write-Host "  Env repo:      $EnvRoot" -ForegroundColor Gray
 if ($DryRun) {
-  Write-Host "  (DRY RUN — no changes made)" -ForegroundColor Yellow
+  Write-Host "  (DRY RUN - no changes made)" -ForegroundColor Yellow
 }

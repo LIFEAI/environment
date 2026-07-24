@@ -9,7 +9,7 @@ $WezProfiles = @(
   [pscustomobject]@{ Name = 'Mktg'; Cwd = 'C:\Dev\regen-root'; Command = @('pwsh.exe', '-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass', '-File', 'C:\Dev\regen-root\scripts\cell-init.ps1', 'cell-mktg') },
   [pscustomobject]@{ Name = 'Infra'; Cwd = 'C:\Dev\regen-root'; Command = @('pwsh.exe', '-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass', '-File', 'C:\Dev\regen-root\scripts\cell-init.ps1', 'cell-infra') },
   [pscustomobject]@{ Name = 'Spec'; Cwd = 'C:\Dev\regen-root'; Command = @('pwsh.exe', '-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass', '-File', 'C:\Dev\regen-root\scripts\cell-init.ps1', 'specialist') },
-  [pscustomobject]@{ Name = 'Codex'; Cwd = 'C:\Dev\regen-root'; Command = @('pwsh.exe', '-NoLogo', '-NoExit', '-Command', 'codex') },
+  [pscustomobject]@{ Name = 'Codex'; Cwd = 'C:\Dev\regen-root'; Command = @('pwsh.exe', '-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass', '-File', 'C:\Dev\regen-root\scripts\codex-worktree-launch.ps1') },
   [pscustomobject]@{ Name = 'Claude'; Cwd = 'C:\Dev\regen-root'; Command = @('pwsh.exe', '-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass', '-File', 'C:\Dev\regen-root\scripts\cell-init.ps1', 'sv') },
   [pscustomobject]@{ Name = 'Co Develop Claude'; Cwd = 'C:\Dev\regen-root'; Command = @('cmd.exe', '/k', "$env:APPDATA\clauth\codevelop-claude.cmd") },
   [pscustomobject]@{ Name = 'Co Develop Codex'; Cwd = 'C:\Dev\regen-root'; Command = @('cmd.exe', '/k', "$env:APPDATA\clauth\codevelop-codex.cmd") },
@@ -38,7 +38,7 @@ function Start-CCandMeLayout {
   $claude = (& wezterm cli split-pane --pane-id $supervisor --top --percent 66 --cwd $work -- cmd.exe /k "cd /d $work && title Claude && claude").Trim()
   if (-not $claude) { throw 'Failed to create CCandMe Claude pane.' }
 
-  $codex = (& wezterm cli split-pane --pane-id $claude --right --percent 50 --cwd $work -- pwsh.exe -NoLogo -NoExit -Command "codex").Trim()
+  $codex = (& wezterm cli split-pane --pane-id $claude --right --percent 50 --cwd $work -- pwsh.exe -NoLogo -NoExit -ExecutionPolicy Bypass -File "C:\Dev\regen-root\scripts\codex-worktree-launch.ps1").Trim()
   if (-not $codex) { throw 'Failed to create CCandMe Codex pane.' }
 
   $me = (& wezterm cli split-pane --pane-id $supervisor --right --percent 50 --cwd $cc -- cmd.exe /k "title Me && prompt Me$G$S && cls").Trim()
@@ -158,7 +158,7 @@ function spec {
 }
 
 function codex-tab {
-  Start-WezTermTab 'Codex' @('pwsh.exe', '-NoLogo', '-NoExit', '-Command', 'codex')
+  Start-WezTermTab 'Codex' @('pwsh.exe', '-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass', '-File', 'C:\Dev\regen-root\scripts\codex-worktree-launch.ps1')
 }
 
 function claude-tab {

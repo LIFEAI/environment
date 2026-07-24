@@ -9,7 +9,7 @@
 import { readFileSync, appendFileSync, mkdirSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { evaluateGuard } from '../../.codex/hooks/codex-guards.mjs';
+import { evaluateGuard } from '../codex/hooks/codex-guards.mjs';
 
 function normalize(input) {
   const ev = input.event && typeof input.event === 'object' ? input.event : input;

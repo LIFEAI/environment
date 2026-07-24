@@ -6,7 +6,7 @@
           {
             "_comment": "The startup guard (session-start.sh) is run by scripts/cell-init.ps1 BEFORE Codex launches, in the visible terminal and with no hook timeout. Codex's harness does not surface SessionStart-hook stdout and its hook timeout killed the guard's cold run (-> exited 1), so it is intentionally NOT a SessionStart hook here. Only the lightweight Dev Center check-in runs as a hook.",
             "type": "command",
-            "command": "pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:/Dev/regen-root/scripts/dev-center-runtime-checkin.ps1\" -Engine codex -Capabilities tail",
+            "command": "pwsh.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:/Dev/lifeai-env/sessions/dev-center-runtime-checkin.ps1\" -Engine codex -Capabilities tail",
             "timeout": 15,
             "statusMessage": "Checking in with Dev Center..."
           },

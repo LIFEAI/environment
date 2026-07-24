@@ -1,7 +1,7 @@
 /** Codex consolidated guards — pure decision tests (2026-07-11). */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateGuard } from '../../../.codex/hooks/codex-guards.mjs';
+import { evaluateGuard } from '../../codex/hooks/codex-guards.mjs';
 
 const block = (ctx, rule) => { const v = evaluateGuard(ctx); assert.equal(v.block, true, JSON.stringify(ctx)); if (rule) assert.equal(v.rule, rule); };
 const allow = (ctx) => assert.equal(evaluateGuard(ctx).block, false, JSON.stringify(ctx));

@@ -267,7 +267,7 @@ const SUB = {
   autostart: path.join(REPO, 'scripts/register-autostart.ps1'),
 };
 const AUTOSTART_LNK = path.join(HOME, 'AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/clauth-autostart.lnk');
-const CODEX_MANAGED_MIRROR = path.join(REPO, '.codex/requirements.managed.toml');
+const CODEX_MANAGED_MIRROR = path.join(REPO, 'codex/requirements.managed.toml');
 const CODEX_MANAGED_LIVE = 'C:/ProgramData/OpenAI/Codex/requirements.toml';
 
 function normalizeText(s) {

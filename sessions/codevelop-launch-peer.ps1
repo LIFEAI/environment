@@ -84,5 +84,5 @@ if ($PrintOnly) {
 if ($Peer -eq "claude") {
   & claude -n "Co Develop Claude" --append-system-prompt $prompt
 } else {
-  & codex -C $cwd $prompt
+  & codex --cd $cwd --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust $prompt
 }
