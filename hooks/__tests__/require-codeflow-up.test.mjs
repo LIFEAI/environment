@@ -54,6 +54,24 @@ test('CodeFlow self-repair env bypass lets both guards repair allowlisted target
   }
 });
 
+test('CodeFlow self-repair env bypass lets both guards repair env-owned hook files', () => {
+  for (const script of hooks) {
+    for (const filePath of [
+      'hooks/require-codeflow-up.js',
+      'codex/hooks/require-codeflow-up.js',
+      'hooks/__tests__/require-codeflow-up.test.mjs',
+      'codex/hooks.json',
+      'sync/env-sync.mjs',
+    ]) {
+      const output = runHook(script, {
+        tool_name: 'Write',
+        tool_input: { file_path: filePath },
+      }, { CODEFLOW_SELF_REPAIR: '1' });
+      assert.deepEqual(output, { hookSpecificOutput: { hookEventName: 'PreToolUse' } }, `${script} allows ${filePath}`);
+    }
+  }
+});
+
 test('CodeFlow self-repair env bypass does not allow unrelated app targets', () => {
   for (const script of hooks) {
     const output = runHook(script, {
@@ -75,11 +93,24 @@ test('scoped command marker is implemented with parity across Claude and Codex h
     assert.match(source, /CODEFLOW_FIXER/);
     assert.match(source, /normalizeRepoPath/);
     assert.match(source, /isSelfRepairPath/);
+    assert.ok(source.includes(`p === 'hooks/require-codeflow-up.js'`));
+    assert.ok(source.includes(`p === 'codex/hooks/require-codeflow-up.js'`));
+    assert.ok(source.includes(`p === 'codex/hooks.json'`));
     assert.ok(source.includes(`p === '.claude/hooks/require-codeflow-up.js'`));
     assert.ok(source.includes(`p === '.codex/hooks/require-codeflow-up.js'`));
     assert.ok(source.includes(`p.startsWith('packages/codeflow/')`));
     assert.ok(source.includes(`scripts\\/codeflow-bluegreen\\.mjs`));
     assert.match(source, /[Bb]lue\/green repair/);
+  }
+});
+
+test('codex hook manifest uses a Windows-safe node resolver, not POSIX parameter expansion', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'codex', 'hooks.json'), 'utf8'));
+  const commands = manifest.hooks.PreToolUse.flatMap((entry) => entry.hooks || []).map((hook) => hook.command || '');
+  assert.ok(commands.some((command) => command.includes("process.env.LIFEAI_ENV||'C:/Dev/lifeai-env'")));
+  for (const command of commands) {
+    assert.doesNotMatch(command, /\$\{LIFEAI_ENV:-/);
+    assert.match(command, /^node -e /);
   }
 });
 

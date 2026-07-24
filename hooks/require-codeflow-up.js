@@ -155,7 +155,12 @@ function normalizeRepoPath(value) {
 
 function isSelfRepairPath(value) {
   const p = normalizeRepoPath(value).toLowerCase();
-  return p === '.codex/hooks/require-codeflow-up.js'
+  return p === 'hooks/require-codeflow-up.js'
+    || p === 'codex/hooks/require-codeflow-up.js'
+    || p === 'hooks/__tests__/require-codeflow-up.test.mjs'
+    || p === 'codex/hooks.json'
+    || p === 'sync/env-sync.mjs'
+    || p === '.codex/hooks/require-codeflow-up.js'
     || p === '.claude/hooks/require-codeflow-up.js'
     || p === '.claude/hooks/__tests__/require-codeflow-up.test.mjs'
     || p.startsWith('packages/codeflow/')
