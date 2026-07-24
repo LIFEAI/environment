@@ -3,12 +3,13 @@
 # Picks up after pnpm install completed successfully.
 # Run from anywhere. Usage: pwsh scripts/deploy-worker-only.ps1
 
-$ROOT = "C:/Dev/regen-root"
-$SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2b2plenVvcmpncXptaGhnbHV1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTMxNDcxNywiZXhwIjoyMDg2ODkwNzE3fQ.8nlxAyvJkUXlDaS87oV4j6ZyJd_5qH_aijB1pUFVlBQ"
-$CF_API_TOKEN = $(curl -s http://127.0.0.1:52437/v/cloudflare)
-$WEBHOOK_SECRET       = "regen-webhook-secret-2026"
+$ROOT = if ($env:PROJECT_ROOT) { $env:PROJECT_ROOT } else { 'C:/Dev/regen-root' }
+$CLAUTH               = 'http://127.0.0.1:52437/v'
+$SUPABASE_SERVICE_KEY = (curl.exe -fsS "$CLAUTH/supabase-service").Trim()
+$CF_API_TOKEN         = (curl.exe -fsS "$CLAUTH/cloudflare").Trim()
+$WEBHOOK_SECRET       = (curl.exe -fsS "$CLAUTH/token-builder-webhook").Trim()
 $WORKER_DIR           = "$ROOT/workers/token-builder"
-$COOLIFY_API = $(curl -s http://127.0.0.1:52437/v/coolify-api)
+$COOLIFY_API          = (curl.exe -fsS "$CLAUTH/coolify-api").Trim()
 $BRAND_STUDIO_UUID    = "a859evmmv0k2sx33kzlq7juv"
 
 function Step($n, $msg) { Write-Host "`n─── STEP $n — $msg ───" -ForegroundColor Cyan }

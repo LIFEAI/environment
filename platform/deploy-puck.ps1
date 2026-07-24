@@ -11,11 +11,12 @@ function Ok($msg)   { Write-Host "  ✓ $msg" -ForegroundColor Green }
 function Err($msg)  { Write-Host "  ✗ $msg" -ForegroundColor Red }
 function Info($msg) { Write-Host "  → $msg" -ForegroundColor Gray }
 
-# ── Secrets (from clauth) ────────────────────────────────────────────────────
-$SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2b2plenVvcmpncXptaGhnbHV1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTMxNDcxNywiZXhwIjoyMDg2ODkwNzE3fQ.8nlxAyvJkUXlDaS87oV4j6ZyJd_5qH_aijB1pUFVlBQ"
-$CF_API_TOKEN = $(curl -s http://127.0.0.1:52437/v/cloudflare)
-$WEBHOOK_SECRET       = "regen-webhook-secret-2026"
-$ROOT                 = "C:/Dev/regen-root"
+# ── Secrets (from clauth daemon) ─────────────────────────────────────────────
+$CLAUTH = 'http://127.0.0.1:52437/v'
+$SUPABASE_SERVICE_KEY = (curl.exe -fsS "$CLAUTH/supabase-service").Trim()
+$CF_API_TOKEN         = (curl.exe -fsS "$CLAUTH/cloudflare").Trim()
+$WEBHOOK_SECRET       = (curl.exe -fsS "$CLAUTH/token-builder-webhook").Trim()
+$ROOT                 = if ($env:PROJECT_ROOT) { $env:PROJECT_ROOT } else { 'C:/Dev/regen-root' }
 
 # ────────────────────────────────────────────────────────────────────────────
 Step 1 "Install @puckeditor/core in brand-studio"
@@ -121,9 +122,10 @@ Step 8 "Trigger Coolify redeploy of brand-studio"
 # ────────────────────────────────────────────────────────────────────────────
 
 Info "Triggering brand-studio redeploy on Coolify..."
+$COOLIFY_TOKEN = (curl.exe -fsS "$CLAUTH/coolify-api").Trim()
 $coolifyResult = curl -s `
     "https://deploy.regendevcorp.com/api/v1/deploy?uuid=a859evmmv0k2sx33kzlq7juv&force=true" `
-    -H "Authorization: Bearer $(curl -s http://127.0.0.1:52437/v/coolify-api)"
+    -H "Authorization: Bearer $COOLIFY_TOKEN"
 Write-Host $coolifyResult
 Ok "Coolify deploy triggered"
 

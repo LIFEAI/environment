@@ -2,16 +2,17 @@
 # deploy-worker-fix.ps1 — Deploy token-builder with CF token as env var
 # Usage: pwsh scripts/deploy-worker-fix.ps1
 
-$ROOT                 = "C:/Dev/regen-root"
+$ROOT                 = if ($env:PROJECT_ROOT) { $env:PROJECT_ROOT } else { 'C:/Dev/regen-root' }
 $WORKER_DIR           = "$ROOT/workers/token-builder"
-$COOLIFY_API = $(curl -s http://127.0.0.1:52437/v/coolify-api)
+$CLAUTH               = 'http://127.0.0.1:52437/v'
+$COOLIFY_API          = (curl.exe -fsS "$CLAUTH/coolify-api").Trim()
 $BRAND_STUDIO_UUID    = "a859evmmv0k2sx33kzlq7juv"
 
 # ── Set CF token as env var so wrangler can auth non-interactively ────────────
-$env:CLOUDFLARE_API_TOKEN = $(curl -s http://127.0.0.1:52437/v/cloudflare)
+$env:CLOUDFLARE_API_TOKEN = (curl.exe -fsS "$CLAUTH/cloudflare").Trim()
 
-$SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2b2plenVvcmpncXptaGhnbHV1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTMxNDcxNywiZXhwIjoyMDg2ODkwNzE3fQ.8nlxAyvJkUXlDaS87oV4j6ZyJd_5qH_aijB1pUFVlBQ"
-$WEBHOOK_SECRET       = "regen-webhook-secret-2026"
+$SUPABASE_SERVICE_KEY = (curl.exe -fsS "$CLAUTH/supabase-service").Trim()
+$WEBHOOK_SECRET       = (curl.exe -fsS "$CLAUTH/token-builder-webhook").Trim()
 
 function Step($n, $msg) { Write-Host "`n─── STEP $n — $msg ───" -ForegroundColor Cyan }
 function Ok($msg)   { Write-Host "  ✓ $msg" -ForegroundColor Green }

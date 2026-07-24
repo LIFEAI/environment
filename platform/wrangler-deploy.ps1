@@ -2,12 +2,14 @@
 # wrangler-deploy.ps1
 # Sets CF token as env var FIRST then runs all wrangler commands.
 
-$WORKER_DIR           = "C:/Dev/regen-root/workers/token-builder"
-$SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2b2plenVvcmpncXptaGhnbHV1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTMxNDcxNywiZXhwIjoyMDg2ODkwNzE3fQ.8nlxAyvJkUXlDaS87oV4j6ZyJd_5qH_aijB1pUFVlBQ"
-$WEBHOOK_SECRET       = "regen-webhook-secret-2026"
+$ROOT                 = if ($env:PROJECT_ROOT) { $env:PROJECT_ROOT } else { 'C:/Dev/regen-root' }
+$WORKER_DIR           = "$ROOT/workers/token-builder"
+$CLAUTH               = 'http://127.0.0.1:52437/v'
+$SUPABASE_SERVICE_KEY = (curl.exe -fsS "$CLAUTH/supabase-service").Trim()
+$WEBHOOK_SECRET       = (curl.exe -fsS "$CLAUTH/token-builder-webhook").Trim()
 
 # ── Auth: set BEFORE any wrangler call ───────────────────────────────────────
-$env:CLOUDFLARE_API_TOKEN = $(curl -s http://127.0.0.1:52437/v/cloudflare)
+$env:CLOUDFLARE_API_TOKEN = (curl.exe -fsS "$CLAUTH/cloudflare").Trim()
 
 function Step($n, $msg) { Write-Host "`n─── STEP $n — $msg ───" -ForegroundColor Cyan }
 function Ok($msg) { Write-Host "  ✓ $msg" -ForegroundColor Green }

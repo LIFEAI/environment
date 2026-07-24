@@ -123,6 +123,36 @@ function Ensure-CorpusRoots {
   }
 }
 
+function Ensure-EnvironmentRepo {
+  $lockFile = Join-Path $RepoRoot 'environment.lock.json'
+  if (-not (Test-Path -LiteralPath $lockFile)) {
+    Write-GuardLog 'environment-repo: no environment.lock.json — skipping env repo check'
+    return
+  }
+  $lock = Get-Content $lockFile -Raw | ConvertFrom-Json
+  $envPath = if ($env:LIFEAI_ENV_ROOT) { $env:LIFEAI_ENV_ROOT } else { $lock.environment_repo.default_path }
+  if (-not $envPath -or -not (Test-Path -LiteralPath $envPath)) {
+    Write-GuardLog "environment-repo: WARN not cloned at $envPath — clone from $($lock.environment_repo.url)"
+    return
+  }
+  $inside = git -C $envPath rev-parse --is-inside-work-tree 2>$null
+  if ($LASTEXITCODE -ne 0) {
+    Write-GuardLog "environment-repo: WARN $envPath exists but is not a git repo"
+    return
+  }
+  try {
+    git -C $envPath fetch origin --quiet 2>$null
+    $behind = git -C $envPath rev-list HEAD..origin/main --count 2>$null
+    if ($behind -and [int]$behind -gt 0) {
+      Write-GuardLog "environment-repo: $behind commit(s) behind origin/main at $envPath — run: git -C $envPath pull"
+    } else {
+      Write-GuardLog "environment-repo: ready path=$envPath"
+    }
+  } catch {
+    Write-GuardLog "environment-repo: ready path=$envPath (fetch skipped: $($_.Exception.Message))"
+  }
+}
+
 function Get-ClauthPing([int]$TimeoutSec = 3) {
   $url = 'http://127.0.0.1:52437/ping'
   try {
@@ -687,6 +717,7 @@ try {
 
   Write-GuardLog '==== agent startup guard begin ===='
   Ensure-CorpusRoots
+  Ensure-EnvironmentRepo
   Ensure-Clauth
   Ensure-RdcSkills
   Ensure-CodeFlow
