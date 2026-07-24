@@ -26,13 +26,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"C:/Dev/regen-root/.codex/hooks/require-codeflow-up.js\"",
+            "command": "node \"${LIFEAI_ENV:-C:/Dev/lifeai-env}/codex/hooks/require-codeflow-up.js\"",
             "timeout": 8,
             "statusMessage": "Verifying CodeFlow is up..."
           },
           {
             "type": "command",
-            "command": "node \"C:/Dev/regen-root/.codex/hooks/codeflow-preflight.js\"",
+            "command": "node \"${LIFEAI_ENV:-C:/Dev/lifeai-env}/codex/hooks/codeflow-preflight.js\"",
             "timeout": 10,
             "statusMessage": "Checking CodeFlow preflight..."
           }

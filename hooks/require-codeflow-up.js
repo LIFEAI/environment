@@ -14,14 +14,14 @@
  *   - PM2 readiness ok/degraded → allow silently. (If the brain is UP but its answer is stale or
  *     unhelpful, the SEPARATE codeflow-preflight hook still lets grep run as a
  *     quality fallback — that path is untouched and correct.)
- *   - Router down → DENY this tool call (any tool: Read/Edit/Bash/Grep/Task/MCP/…)
- *     AND kick off a detached auto-heal (scripts/codeflow-ensure-up.mjs) that
- *     restarts the router clean so it re-routes to PM2. The agent re-runs its
- *     command a few seconds later and finds the router healthy.
+ *   - Router down → DENY this tool call (any tool: Read/Edit/Bash/Grep/Task/MCP/…).
+ *     No hook may spin up a local fallback gateway. Repair must go through the
+ *     blue/green controller (`node scripts/codeflow-bluegreen.mjs recover`) or
+ *     a read-only diagnostic/probe command.
  *
  * Never-deadlock escape hatches (so the router can always be fixed):
- *   - A Bash command that is itself a CodeFlow/pm2/docker/clauth REPAIR or probe
- *     command is allowed through even while down.
+ *   - A Bash command that is itself a CodeFlow blue/green repair or read-only
+ *     probe command is allowed through even while down.
  *   - A dedicated CodeFlow fixer session may set CODEFLOW_SELF_REPAIR=1, or a
  *     scoped CodeFlow/hook repair command may carry CODEFLOW_SELF_REPAIR=1.
  *   - CODEFLOW_ENFORCE=0 disables the gate entirely (break-glass).
@@ -34,7 +34,6 @@
  * exception) — a genuine router-down is fail-CLOSED (deny).
  */
 const http = require('node:http');
-const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
@@ -60,17 +59,11 @@ function resolveRepoRoot() {
 }
 
 const REPO_ROOT = resolveRepoRoot();
-const ENSURE_UP = path.join(REPO_ROOT, 'scripts', 'codeflow-ensure-up.mjs');
 const ROUTER = { host: '127.0.0.1', port: 3109, pathname: '/health' };
 const CACHE_DIR = path.join(os.homedir(), '.codeflow');
 const HEALTH_CACHE = path.join(CACHE_DIR, 'router-health.json');
-const HEAL_STAMP = path.join(CACHE_DIR, 'router-heal.json');
 const HEALTH_TTL_MS = 8000;    // trust a fresh cached health result this long
-const HEAL_COOLDOWN_MS = 45000; // don't respawn the healer more often than this
 const PROBE_TIMEOUT_MS = 2000;
-const HEAL_FAILS = path.join(CACHE_DIR, 'router-heal-fails.json');
-const MAX_HEAL_FAILS = 3;              // after N consecutive failed heals, degrade to allow-with-warning
-const FAIL_WINDOW_MS = 10 * 60 * 1000; // ...only if those failures are recent
 const SELF_REPAIR_MARKER = /\bCODEFLOW_(?:SELF_REPAIR|FIXER)=1\b/i;
 
 // Plumbing-independent break-glass. CODEFLOW_ENFORCE / CODEFLOW_SELF_REPAIR set in a
@@ -129,24 +122,6 @@ function plannedDowntimeActive() {
   return false;
 }
 
-// Live-but-unready streak. A live gateway with an unhealthy PM2 snapshot (empty
-// generation / deep-health fault) CANNOT be fixed by restarting the gateway — the real
-// fix is a rehydrate — so the gate used to deny forever with no escape. Track a bounded
-// recent streak so we can degrade-allow after MAX_UNREADY and never permanently brick a
-// session when the brain is up-but-empty and no one can rehydrate.
-const UNREADY_STREAK = path.join(CACHE_DIR, 'router-unready.json');
-const MAX_UNREADY = 5;
-function bumpUnready() {
-  const cur = readJson(UNREADY_STREAK);
-  const base = cur && Date.now() - (cur.ts || 0) < FAIL_WINDOW_MS ? (cur.count || 0) : 0;
-  const count = base + 1;
-  writeJson(UNREADY_STREAK, { ts: Date.now(), count });
-  return count;
-}
-function resetUnready() {
-  try { fs.rmSync(UNREADY_STREAK, { force: true }); } catch { /* ignore */ }
-}
-
 // A repair/probe command must pass EVEN WHEN DOWN so the gate never deadlocks its
 // own fix. Match the real repair FORMS — a leading repair program, OR an explicit
 // reference to the codeflow healer script / the :3109 router URL — rather than any
@@ -154,15 +129,12 @@ function resetUnready() {
 function isRepairCommand(cmd) {
   const c = stripLeadingEnv(String(cmd || '').trim()).replace(/\\/g, '/');
   if (/[\r\n;&|`]/.test(c) || /\$\(/.test(c)) return false;
-  if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow[\w./-]*\.mjs\b/i.test(c)) return true;
+  if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow-bluegreen\.mjs\b/i.test(c)) return true;
   if (/^(?:curl|wget)\b.*\b(?:127\.0\.0\.1:3109|localhost:3109)\b/i.test(c)) return true;
-  if (/^pm2\b.*\bcodeflow\b/i.test(c)) return true;
-  // CODEFLOW_SELF_REPAIR=1: allow tightly scoped remote PM2 repair on the CodeFlow dev brain host.
-  if (/^ssh\b.*\b64\.237\.54\.189\b.*\b(?:codeflow|pm2)\b/i.test(c)) return true;
-  if (/^docker\b.*\b(?:codeflow|neo4j)\b/i.test(c)) return true;
+  if (/^pm2\s+(?:jlist|list|status|describe|info|logs)\b.*\bcodeflow\b/i.test(c)) return true;
+  if (/^ssh\b.*\b64\.237\.54\.189\b.*\b(?:codeflow-bluegreen|codeflow.*health|pm2\s+(?:jlist|list|status|describe|info|logs))\b/i.test(c)) return true;
   if (/^clauth\b/i.test(c)) return true;
   if (/^(?:\.\/)?scripts\/restart-clauth\.bat$/i.test(c)) return true;
-  if (/^pnpm\s+env:patch\b/i.test(c)) return true;
   return false;
 }
 
@@ -188,7 +160,6 @@ function isSelfRepairPath(value) {
     || p === '.claude/hooks/__tests__/require-codeflow-up.test.mjs'
     || p.startsWith('packages/codeflow/')
     || p === 'scripts/agent-startup-guard.ps1'
-    || p === 'scripts/codeflow-local.config.js'
     || p === 'scripts/restart-clauth.bat'
     || p.includes('guards/agent-startup-guard.ps1')
     || p.includes('services/restart-clauth.bat')
@@ -223,12 +194,12 @@ function isSelfRepairShellCommand(command) {
   const c = stripLeadingEnv(String(command || '').trim()).replace(/\\/g, '/');
   if (patchTargetsAreSelfRepair(c)) return true;
   if (/[\r\n;&|`]/.test(c) || /\$\(/.test(c)) return false;
-  if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow[-\w.]*\.mjs(?:\s+--[\w=-]+)*$/i.test(c)) return true;
+  if (/^(?:node|pnpm|npx)\s+(?:\.\/)?scripts\/codeflow-bluegreen\.mjs(?:\s+[\w=./:-]+)*$/i.test(c)) return true;
   if (/^node\s+--test\s+\.claude\/hooks\/__tests__\/require-codeflow-up\.test\.mjs$/i.test(c)) return true;
   if (/^pnpm\s+--filter\s+@regen\/codeflow\s+exec\s+vitest\s+run(?:\s+src\/(?:brain\/(?:subsystems|readiness)\.test\.ts|mcp\/server\.test\.ts))+$/i.test(c)) return true;
   if (/^npx\s+tsc\b.*--project\s+packages\/codeflow\/tsconfig\.json\b/i.test(c)) return true;
   if (/^(?:curl|wget)\b.*\b(?:127\.0\.0\.1:3109|localhost:3109)\b/i.test(c)) return true;
-  if (/^pm2\b.*\bcodeflow\b/i.test(c)) return true;
+  if (/^pm2\s+(?:jlist|list|status|describe|info|logs)\b.*\bcodeflow\b/i.test(c)) return true;
   return false;
 }
 
@@ -283,23 +254,6 @@ async function health() {
   return { ...r, cached: false };
 }
 
-function kickHeal() {
-  const stamp = readJson(HEAL_STAMP);
-  if (stamp && Date.now() - stamp.ts < HEAL_COOLDOWN_MS) return; // heal already in flight
-  writeJson(HEAL_STAMP, { ts: Date.now() });
-  try {
-    // Strip the freeze-causing vars so the config's clauth-sourced values win.
-    // Destructure-omit (not delete/undefined): an env value of undefined would be
-    // passed to spawn as the literal string "undefined" and re-freeze the brain.
-    const { CODEFLOW_BRAIN, NEO4J_PASSWORD, CODEFLOW_SELF_BRAINS, ...env } = process.env;
-    void CODEFLOW_BRAIN; void NEO4J_PASSWORD; void CODEFLOW_SELF_BRAINS;
-    const child = spawn(process.execPath, [ENSURE_UP], {
-      cwd: REPO_ROOT, env, detached: true, stdio: 'ignore', windowsHide: true,
-    });
-    child.unref();
-  } catch { /* heal is best-effort; the deny still stands */ }
-}
-
 function allow() {
   process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse' } }));
   process.exit(0);
@@ -317,8 +271,8 @@ function deny(status, gatewayLive = false) {
     '',
     gatewayLive
       ? '   The gateway was not restarted: a PM2 deep-health fault is not repaired by destroying its pool/cache.'
-      : '   Auto-heal has been kicked off; repair/diagnostic commands (pm2 / codeflow / docker / clauth / curl :3109) are allowed.',
-    '   CodeFlow fixer lane: set CODEFLOW_SELF_REPAIR=1 only for allowlisted CodeFlow/hook repair targets, or prefix scoped CodeFlow/hook repair commands with CODEFLOW_SELF_REPAIR=1.',
+      : '   No local fallback was started. Stable codeflow-mcp is blue/green-owned.',
+    '   Repair lane: use `node scripts/codeflow-bluegreen.mjs recover`; raw pm2 start/restart/delete is denied.',
     '   Break-glass (works mid-session — env vars set in a running shell do NOT reach this hook):',
     '     create a file at  .rdc/codeflow-break-glass  (repo)  or  ~/.codeflow/break-glass  (home) → gate opens; delete it to re-arm.',
     '   (CODEFLOW_ENFORCE=0 only works if exported BEFORE the session launched.)',
@@ -389,28 +343,6 @@ function isPlannedFallbackTool(event) {
   return false;
 }
 
-// True once auto-heal has failed MAX_HEAL_FAILS times in a row recently — i.e. the
-// PM2 remote brain is genuinely unreachable, not a local hiccup a restart fixes.
-function healExhausted() {
-  const f = readJson(HEAL_FAILS);
-  return !!(f && (f.count || 0) >= MAX_HEAL_FAILS && Date.now() - (f.ts || 0) < FAIL_WINDOW_MS);
-}
-
-// Unrecoverable-outage escape: allow tools through WITH a loud warning instead of
-// a hard deny, so an unattended session is not permanently bricked when the brain
-// is down for real (it cannot set CODEFLOW_ENFORCE=0 mid-run). Full enforcement
-// resumes automatically once a heal succeeds (which resets the fail counter).
-function degradeAllow(status) {
-  const ctx = [
-    `[codeflow DEGRADED-ALLOW] Router DOWN (status=${status}) and ${MAX_HEAL_FAILS}+ auto-heals failed in a row —`,
-    'the PM2 brain appears genuinely unreachable, not a local hiccup. Allowing tools so the session is not',
-    'bricked; treat CodeFlow as UNAVAILABLE and rely on grep/direct reads. Restore the PM2 brain',
-    '(https://codeflow-pm2.regendevcorp.com/mcp) to re-arm full enforcement.',
-  ].join(' ');
-  process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', additionalContext: ctx } }));
-  process.exit(0);
-}
-
 function plannedDecision(event, status) {
   const ctx = `[codeflow PLANNED-DOWNTIME] CodeFlow is intentionally paused/down for a planned upgrade (status=${status}); use grep/direct file-tree reads until /health reports accepting work again.`;
   if (isPlannedFallbackTool(event)) {
@@ -445,22 +377,16 @@ async function run() {
 
   const h = await health();
   if (h.planned) return plannedDecision(event, h.status);
-  if (h.ready) { resetUnready(); return allow(); }
+  if (h.ready) return allow();
 
-  // A responsive gateway with an unhealthy PM2 snapshot must not be restarted:
-  // restarting destroys the shared pool/cache and cannot repair a deep probe.
-  // A responsive gateway with an unhealthy PM2 snapshot must not be restarted:
-  // restarting destroys the shared pool/cache and cannot repair a deep probe (the real
-  // fix is a rehydrate). But NEVER infinite-deny: after MAX_UNREADY denials in the window
-  // degrade-allow so the session is not permanently bricked when the brain is up-but-empty.
+  // A responsive gateway with an unhealthy PM2 snapshot must not be restarted.
+  // Restarting destroys shared pool/cache state and cannot repair a deep probe;
+  // the correct recovery remains blue/green repair or rehydration.
   if (h.live) {
-    if (bumpUnready() > MAX_UNREADY) return degradeAllow(h.status);
     return deny(h.status, true);
   }
 
-  kickHeal();                                  // fire-and-forget restart → PM2 brain
-  if (healExhausted()) return degradeAllow(h.status); // unrecoverable → don't brick, warn instead
-  return deny(h.status);                        // transient down → hard stop, re-run after heal
+  return deny(h.status);
 }
 
 run().catch(() => {

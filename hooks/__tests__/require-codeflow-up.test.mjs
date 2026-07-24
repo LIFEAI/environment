@@ -7,10 +7,10 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(dir, '..', '..', '..');
+const repoRoot = path.resolve(dir, '..', '..');
 const hooks = [
-  path.join(repoRoot, '.claude', 'hooks', 'require-codeflow-up.js'),
-  path.join(repoRoot, '.codex', 'hooks', 'require-codeflow-up.js'),
+  path.join(repoRoot, 'hooks', 'require-codeflow-up.js'),
+  path.join(repoRoot, 'codex', 'hooks', 'require-codeflow-up.js'),
 ];
 
 function fakeHome() {
@@ -71,7 +71,6 @@ test('scoped command marker is implemented with parity across Claude and Codex h
     assert.match(source, /function isCodeflowSelfRepair\(event\)/);
     assert.match(source, /function resolveRepoRoot\(\)/);
     assert.match(source, /process\.cwd\(\)/);
-    assert.match(source, /scripts', 'codeflow-ensure-up\.mjs'/);
     assert.match(source, /CODEFLOW_SELF_REPAIR/);
     assert.match(source, /CODEFLOW_FIXER/);
     assert.match(source, /normalizeRepoPath/);
@@ -79,26 +78,25 @@ test('scoped command marker is implemented with parity across Claude and Codex h
     assert.ok(source.includes(`p === '.claude/hooks/require-codeflow-up.js'`));
     assert.ok(source.includes(`p === '.codex/hooks/require-codeflow-up.js'`));
     assert.ok(source.includes(`p.startsWith('packages/codeflow/')`));
-    assert.ok(source.includes(`p === 'scripts/codeflow-local.config.js'`));
-    assert.ok(source.includes(`scripts\\/codeflow[-\\w.]*\\.mjs`));
-    assert.match(source, /allowlisted CodeFlow\/hook repair targets/);
+    assert.ok(source.includes(`scripts\\/codeflow-bluegreen\\.mjs`));
+    assert.match(source, /[Bb]lue\/green repair/);
   }
 });
 
-test('CodeFlow self-repair env bypass allows the local PM2 ecosystem config', () => {
+test('CodeFlow self-repair env bypass does not allow the local PM2 ecosystem config', () => {
   for (const script of hooks) {
     const output = runHook(script, {
       tool_name: 'Write',
       tool_input: { file_path: 'scripts/codeflow-local.config.js' },
     }, { CODEFLOW_SELF_REPAIR: '1' });
-    assert.deepEqual(output, { hookSpecificOutput: { hookEventName: 'PreToolUse' } });
+    assert.equal(output.hookSpecificOutput?.permissionDecision, 'deny');
   }
 });
 
 test('command-scoped marker allows CodeFlow repair targets only', () => {
   const payload = {
     tool_name: 'Bash',
-    tool_input: { command: 'CODEFLOW_SELF_REPAIR=1 node scripts/codeflow-ensure-up.mjs' },
+    tool_input: { command: 'CODEFLOW_SELF_REPAIR=1 node scripts/codeflow-bluegreen.mjs recover' },
   };
   for (const script of hooks) {
     const output = runHook(script, payload);
@@ -177,10 +175,32 @@ test('valid patch payloads under packages/codeflow are self-repair targets', () 
   }
 });
 
+test('marked legacy local startup commands do not pass', () => {
+  const payload = {
+    tool_name: 'Bash',
+    tool_input: { command: 'CODEFLOW_SELF_REPAIR=1 node scripts/codeflow-ensure-up.mjs' },
+  };
+  for (const script of hooks) {
+    const output = runHook(script, payload);
+    assert.equal(output.hookSpecificOutput?.permissionDecision, 'deny');
+  }
+});
+
+test('marked raw pm2 codeflow lifecycle commands do not pass', () => {
+  const payload = {
+    tool_name: 'Bash',
+    tool_input: { command: 'CODEFLOW_SELF_REPAIR=1 pm2 restart codeflow-mcp' },
+  };
+  for (const script of hooks) {
+    const output = runHook(script, payload);
+    assert.equal(output.hookSpecificOutput?.permissionDecision, 'deny');
+  }
+});
+
 test('marked compound repair-looking commands do not pass', () => {
   const payload = {
     tool_name: 'Bash',
-    tool_input: { command: 'CODEFLOW_SELF_REPAIR=1 node scripts/codeflow-ensure-up.mjs; echo nope' },
+    tool_input: { command: 'CODEFLOW_SELF_REPAIR=1 node scripts/codeflow-bluegreen.mjs recover; echo nope' },
   };
   for (const script of hooks) {
     const output = runHook(script, payload);
@@ -205,11 +225,12 @@ test('both require-codeflow-up hooks pass syntax check', () => {
   }
 });
 
-test('auto-heal strips brain-forcing env with parity across Claude and Codex hooks', () => {
+test('hooks do not spawn local auto-heal with parity across Claude and Codex hooks', () => {
   for (const script of hooks) {
     const source = fs.readFileSync(script, 'utf8');
-    assert.match(source, /const \{ CODEFLOW_BRAIN, NEO4J_PASSWORD, CODEFLOW_SELF_BRAINS, \.\.\.env \} = process\.env;/);
-    assert.match(source, /void CODEFLOW_BRAIN; void NEO4J_PASSWORD; void CODEFLOW_SELF_BRAINS;/);
+    assert.doesNotMatch(source, /spawn\(process\.execPath, \[ENSURE_UP\]/);
+    assert.doesNotMatch(source, /function kickHeal\(/);
+    assert.doesNotMatch(source, /DEGRADED-ALLOW/);
   }
 });
 
@@ -291,7 +312,7 @@ test('CODEFLOW_ENFORCE=0 break-glass allows any tool — both engines', () => {
   }
 });
 
-test('live-but-unready NEVER infinite-denies: degrades to allow after MAX_UNREADY — both engines', () => {
+test('live-but-unready remains a hard stop instead of degrade-allow — both engines', () => {
   for (const script of hooks) {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'codeflow-hook-unready-'));
     const cache = path.join(home, '.codeflow');
@@ -307,7 +328,7 @@ test('live-but-unready NEVER infinite-denies: degrades to allow after MAX_UNREAD
     }
     assert.equal(decisions[0]?.permissionDecision, 'deny', script + ': denies while the streak is small');
     const last = decisions[6];
-    assert.equal(last?.permissionDecision, undefined, script + ': must stop denying after MAX_UNREADY');
-    assert.match(last?.additionalContext || '', /DEGRADED-ALLOW/, script + ': degrade-allows instead of bricking');
+    assert.equal(last?.permissionDecision, 'deny', script + ': keeps denying while CodeFlow is unready');
+    assert.doesNotMatch(last?.additionalContext || '', /DEGRADED-ALLOW/);
   }
 });

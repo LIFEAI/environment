@@ -13,7 +13,8 @@
  * `--check` (default) is READ-ONLY: prints a drift table, exits 1 on any drift.
  * `--fix` reconciles the LOCAL (Carbon7) plane only — it NEVER mutates Vultr/prod
  *   (those are webhook/GitOps-driven). Local fixes: pull marketplace clone,
- *   reinstall plugin, rebuild + restart local MCP, reinstall hooks, pm2 save.
+ *   reinstall plugin, rebuild CodeFlow artifacts without restarting its blue/green
+ *   gateway, reinstall hooks, and save PM2 only for non-CodeFlow services.
  *
  * Usage:
  *   node scripts/env-sync.mjs            # drift report
@@ -245,7 +246,7 @@ function fixRdcSkills() {
 function fixCodeflow() {
   const log = [];
   if (sh(`npm --prefix "${path.join(REPO, 'packages/codeflow')}" run esbuild`, { cwd: path.join(REPO, 'packages/codeflow') }) != null) log.push('rebuilt codeflow dist (esbuild)');
-  if (sh(`node "${REPO}/scripts/codeflow-safe-reload.mjs" --name codeflow-mcp && pm2 save`) != null) log.push('rolling-reloaded codeflow-mcp + pm2 save');
+  log.push('skipped codeflow-mcp restart; stable gateway is blue/green-owned (run node scripts/codeflow-bluegreen.mjs recover)');
   // hooks (endpoint config + registrations)
   sh(`node "${REPO}/scripts/claude-hooks/install-codeflow-hooks.mjs"`, { stdio: ['ignore', 'ignore', 'ignore'] });
   log.push('reinstalled codeflow hooks');
