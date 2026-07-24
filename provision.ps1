@@ -42,14 +42,13 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$EnvRoot = Split-Path -Parent $PSScriptRoot
-if (-not $EnvRoot) { $EnvRoot = $PSScriptRoot }
+$EnvRoot = $PSScriptRoot
 
 function Log($msg, $color = 'Cyan') { Write-Host "  $msg" -ForegroundColor $color }
 function Ok($msg)   { Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Warn($msg) { Write-Host "  [WARN] $msg" -ForegroundColor Yellow }
 function Fail($msg) { Write-Host "  [FAIL] $msg" -ForegroundColor Red }
-function Step($n, $msg) { Write-Host "`n--- Step $n: $msg ---" -ForegroundColor White }
+function Step($n, $msg) { Write-Host "`n--- Step ${n}: $msg ---" -ForegroundColor White }
 
 Write-Host "`n=== LIFEAI Environment Provisioner ===" -ForegroundColor Cyan
 Write-Host "  Env repo:  $EnvRoot" -ForegroundColor Gray
