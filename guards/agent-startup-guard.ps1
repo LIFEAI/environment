@@ -415,20 +415,34 @@ function Ensure-CodeFlow {
     return
   }
 
-  # Gateway is down. Blue-green recover builds dist if needed and starts the
-  # gateway in a managed slot with hot-swap capability. No Docker/Neo4j needed
-  # for the local relay — the brain lives on Vultr PM2.
-  Write-GuardLog 'codeflow: recovering gateway via blue-green controller'
+  # Gateway is down. Try blue-green recover first (hot-swap capable); if slots
+  # don't exist yet (first run / fresh machine), fall back to direct pm2 start.
+  Write-GuardLog 'codeflow: gateway down — starting'
   $node = Assert-Command node
+  $pm2 = Assert-Command pm2
   $bgScript = Join-Path $RepoRoot 'scripts\codeflow-bluegreen.mjs'
-  if (Test-Path $bgScript) {
+  $blueSlot = 'C:\Dev\codeflow-blue'
+  $greenSlot = 'C:\Dev\codeflow-green'
+  $slotsExist = (Test-Path $blueSlot) -or (Test-Path $greenSlot)
+
+  if ((Test-Path $bgScript) -and $slotsExist) {
+    Write-GuardLog 'codeflow: recovering via blue-green controller'
     & $node $bgScript recover | Out-Null
   } else {
-    Write-GuardLog 'codeflow: WARN codeflow-bluegreen.mjs not found — cannot start gateway'
-    throw 'CodeFlow gateway down and codeflow-bluegreen.mjs not available for recovery.'
+    # Blue-green slots not initialized — direct start as passthrough relay.
+    # This is the first-run / post-reboot path before `prepare` has been run.
+    Write-GuardLog 'codeflow: no blue-green slots — direct pm2 start (passthrough relay)'
+    $dist = Join-Path $RepoRoot 'packages\codeflow\dist\server.js'
+    $cf = Join-Path $RepoRoot 'packages\codeflow'
+    if (-not (Test-Path $dist)) {
+      Write-GuardLog 'codeflow: dist missing — building'
+      $pnpm = Assert-Command pnpm
+      & $pnpm --filter '@regen/codeflow' esbuild 2>&1 | Out-Null
+    }
+    & $pm2 start $dist --name codeflow-mcp --cwd $cf --node-args "--import=tsx" --update-env | Out-Null
   }
   # 15s per-probe timeout: remote-brain /health takes ~6s.
-  if (-not (Wait-HttpOk $health 45 15)) { throw 'CodeFlow gateway did not answer /health after blue-green recover.' }
+  if (-not (Wait-HttpOk $health 45 15)) { throw 'CodeFlow gateway did not answer /health after startup.' }
   $pm2 = Assert-Command pm2
   & $pm2 save | Out-Null
   Write-GuardLog 'codeflow: ready'
