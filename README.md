@@ -7,7 +7,7 @@ Project-agnostic framework for machine provisioning, service management, session
 ```powershell
 git clone https://github.com/LIFEAI/environment.git C:/Dev/lifeai-env
 cd C:/Dev/lifeai-env
-./machines/install.ps1     # idempotent — safe to re-run
+./provision.ps1             # idempotent — bare metal or transition
 ./audit/audit.ps1           # check installed vs required versions
 ```
 
