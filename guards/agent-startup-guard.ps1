@@ -415,27 +415,11 @@ function Ensure-CodeFlow {
     return
   }
 
-  # CodeFlow MCP is a machine service — keep it warm like clauth.
-  # If down after reboot, pm2 resurrect restores it from the saved dump.
-  # If still down, direct start as passthrough relay to Vultr PM2 brain.
-  Write-GuardLog 'codeflow: gateway down — restoring'
+  # Same pattern as clauth: restart the MCP if not reachable.
+  Write-GuardLog 'codeflow: restarting MCP'
   $pm2 = Assert-Command pm2
-  & $pm2 resurrect 2>&1 | Out-Null
-  if (Wait-HttpOk $health 15 15) {
-    Write-GuardLog 'codeflow: ready (restored from pm2 dump)'
-  } else {
-    Write-GuardLog 'codeflow: pm2 resurrect did not bring it up — starting fresh'
-    $node = Assert-Command node
-    $dist = Join-Path $RepoRoot 'packages\codeflow\dist\server.js'
-    $cf = Join-Path $RepoRoot 'packages\codeflow'
-    if (-not (Test-Path $dist)) {
-      $pnpm = Assert-Command pnpm
-      & $pnpm --filter '@regen/codeflow' esbuild 2>&1 | Out-Null
-    }
-    & $pm2 start $dist --name codeflow-mcp --cwd $cf --node-args "--import=tsx" --update-env 2>&1 | Out-Null
-    & $pm2 save 2>&1 | Out-Null
-    if (-not (Wait-HttpOk $health 30 15)) { throw 'CodeFlow gateway did not start.' }
-  }
+  & $pm2 restart codeflow-mcp --update-env 2>&1 | Out-Null
+  if (-not (Wait-HttpOk $health 30 15)) { throw 'CodeFlow MCP did not come up after pm2 restart.' }
   $pm2 = Assert-Command pm2
   & $pm2 save | Out-Null
   Write-GuardLog 'codeflow: ready'
